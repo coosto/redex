@@ -12,7 +12,9 @@ Also writes are not consistent across the cluster and replication is done in an 
 Redex solves all of the above issues.
 
 - Uses replicated Mnesia in-memory database for storage
-- Writes are strong consistent across the cluster
+- By default writes are strong consistent across the cluster
+- Consistency model is configurable, you can set it to eventual to gain better perfomance
+- Consistency model also can be configured per client
 - Reads are local and fast
 - Read/Write performance is comparable to Redis in a single node setup
 - Supports automatic cluster formation/healing (using k8s API)
@@ -35,5 +37,6 @@ For now only a small subset of the commands are supported:
 - PTTL
 - PING
 - SELECT
+- FLUSHALL (without ASYNC argument)
 - INFO (keyspace section only)
 - QUIT

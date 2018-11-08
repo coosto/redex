@@ -22,35 +22,28 @@ defmodule Redex.Command do
   #   {:noreply, %{state | channels: channels}}
   # end
 
-  def exec(["SET", "REDEX_CONSISTENCY", consistency], state)
-      when consistency in ["STRONG", "EVENTUAL"] do
-    {:ok, %{state | consistent: consistency == "STRONG"}}
-  end
-
-  def exec(["SET", "REDEX_CONSISTENCY" | _rest], state) do
-    {{:error, "ERR invalid consistency model"}, state}
-  end
-
-  def exec(["GET", "REDEX_CONSISTENCY"], state) do
-    consistency = if state.consistent, do: "STRONG", else: "EVENTUAL"
-    {consistency, state}
-  end
-
   def exec(["SET", key, value | args], state = %{db: db}) do
     case args |> Enum.map(&String.upcase/1) |> SET.args() do
       {:ok, args} ->
         expiry = if args["PX"], do: System.system_time(:milliseconds) + args["PX"]
+        nodes = :mnesia.system_info(:running_db_nodes)
 
-        {:atomic, :ok} =
-          if !state.consistent or Node.list(:connected) == [] do
-            {:atomic, :mnesia.dirty_write({:redex, {db, key}, value, expiry})}
-          else
-            :mnesia.transaction(fn ->
-              :mnesia.write({:redex, {db, key}, value, expiry})
-            end)
-          end
+        cond do
+          length(nodes) < state.quorum ->
+            {{:error, "READONLY You can't write against a read only replica."}, state}
 
-        {:ok, state}
+          length(nodes) == 1 ->
+            :ok = :mnesia.dirty_write({:redex, {db, key}, value, expiry})
+            {:ok, state}
+
+          true ->
+            {:atomic, :ok} =
+              :mnesia.sync_transaction(fn ->
+                :mnesia.write({:redex, {db, key}, value, expiry})
+              end)
+
+            {:ok, state}
+        end
 
       error ->
         {error, state}
@@ -62,16 +55,7 @@ defmodule Redex.Command do
   def exec(["GET", key], state = %{db: db}) do
     now = System.system_time(:milliseconds)
 
-    {:atomic, records} =
-      if !state.consistent or Node.list(:connected) == [] do
-        {:atomic, :mnesia.dirty_read(:redex, {db, key})}
-      else
-        :mnesia.transaction(fn ->
-          :mnesia.read(:redex, {db, key})
-        end)
-      end
-
-    case records do
+    case :mnesia.dirty_read(:redex, {db, key}) do
       [{:redex, {^db, ^key}, value, expiry}] when expiry > now ->
         {value, state}
 
@@ -81,7 +65,11 @@ defmodule Redex.Command do
   end
 
   def exec(["DEL", key | rest], state = %{db: db}) do
-    {DEL.delete(db, [key | rest]), state}
+    if Redex.readonly?(state.quorum) do
+      {{:error, "READONLY You can't write against a read only replica."}, state}
+    else
+      {DEL.delete(db, [key | rest]), state}
+    end
   end
 
   def exec(["TTL", key], state) do
@@ -129,7 +117,7 @@ defmodule Redex.Command do
   end
 
   def exec([cmd | _]) do
-    if cmd in ["FLUSHALL", "DEL", "GET", "PING", "TTL", "PTTL"],
+    if cmd in ["FLUSHALL", "DEL", "SET", "GET", "PING", "TTL", "PTTL"],
       do: {:error, "ERR wrong number of arguments for '#{cmd}' command"},
       else: {:error, "ERR unknown command '#{cmd}'"}
   end

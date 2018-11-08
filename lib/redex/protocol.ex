@@ -7,19 +7,17 @@ defmodule Redex.Protocol do
 
   alias Redex.Command
 
-  def start_link(ref, _socket, transport, _opts) do
-    Task.start_link(__MODULE__, :init, [ref, transport])
+  def start_link(ref, _socket, transport, quorum: quorum) do
+    Task.start_link(__MODULE__, :init, [ref, transport, quorum])
   end
 
-  def init(ref, transport) do
+  def init(ref, transport, quorum) do
     {:ok, socket} = :ranch.handshake(ref)
-
-    consistent = Application.get_env(:redex, :consistency) != "EVENTUAL"
 
     loop(
       transport,
       socket,
-      %{consistent: consistent, db: 0, channels: []},
+      %{quorum: quorum, db: 0, channels: []},
       "",
       &parse/1
     )

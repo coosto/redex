@@ -5,14 +5,15 @@ defmodule Redex.Application do
 
   use Application
 
-  require Logger
-
   def start(_type, _args) do
     topologies = Application.get_env(:libcluster, :topologies)
+    quorum = Confex.fetch_env!(:redex, :quorum)
+    port = Confex.fetch_env!(:redex, :port)
+    redex_opts = %{port: port, quorum: quorum}
 
     children = [
       {Cluster.Supervisor, [topologies, [name: Redex.ClusterSupervisor]]},
-      Redex,
+      {Redex, redex_opts},
       Redex.Cleaner
     ]
 

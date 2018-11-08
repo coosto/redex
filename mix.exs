@@ -22,6 +22,7 @@ defmodule Redex.MixProject do
   # Run "mix help deps" to learn about dependencies.
   defp deps do
     [
+      {:confex, "~> 3.3"},
       {:ranch, "~> 1.6"},
       {:libcluster, "~> 3.0"},
       {:distillery, "~> 2.0"}

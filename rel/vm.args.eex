@@ -1,5 +1,5 @@
 ## Name of the node
--name <%= release_name %>@${POD_IP}
+-name <%= release_name %>@${REDEX_IP}
 
 ## Cookie for distributed erlang
 ## We prefix cookie with REDEX_SELECTOR so different apps don't get clustered accidentally

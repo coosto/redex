@@ -19,7 +19,7 @@ defmodule Redex.Command.INFO do
     first = :mnesia.dirty_first(:redex)
 
     keyspace =
-      keyspace(now, first, %{0 => %{keys: 0, expires: 0, avg_ttl: 0}})
+      keyspace(now, first, %{})
       |> Enum.map(fn {db, info} ->
         "db#{db}:keys=#{info.keys},expires=#{info.expires},avg_ttl=#{info.avg_ttl}\r\n"
       end)

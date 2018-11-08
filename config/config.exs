@@ -22,8 +22,8 @@ use Mix.Config
 #
 
 config :redex,
-  port: 6379,
-  consistency: "${REDEX_CONSISTENCY}"
+  port: {:system, :integer, "REDEX_PORT", 6379},
+  quorum: {:system, :integer, "REDEX_QUORUM", 2}
 
 # It is also possible to import configuration files, relative to this
 # directory. For example, you can emulate configuration per environment

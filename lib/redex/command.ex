@@ -25,7 +25,7 @@ defmodule Redex.Command do
   def exec(["SET", key, value | args], state = %{db: db}) do
     case args |> Enum.map(&String.upcase/1) |> SET.args() do
       {:ok, args} ->
-        expiry = if args["PX"], do: System.system_time(:milliseconds) + args["PX"]
+        expiry = if args["PX"], do: System.system_time(:millisecond) + args["PX"]
         nodes = :mnesia.system_info(:running_db_nodes)
 
         cond do
@@ -53,7 +53,7 @@ defmodule Redex.Command do
   end
 
   def exec(["GET", key], state = %{db: db}) do
-    now = System.system_time(:milliseconds)
+    now = System.system_time(:millisecond)
 
     case :mnesia.dirty_read(:redex, {db, key}) do
       [{:redex, {^db, ^key}, value, expiry}] when expiry > now ->
@@ -79,7 +79,7 @@ defmodule Redex.Command do
   end
 
   def exec(["PTTL", key], state = %{db: db}) do
-    now = System.system_time(:milliseconds)
+    now = System.system_time(:millisecond)
 
     case :mnesia.dirty_read(:redex, {db, key}) do
       [{:redex, {^db, ^key}, _value, nil}] ->

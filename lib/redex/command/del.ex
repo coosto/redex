@@ -1,14 +1,27 @@
 defmodule Redex.Command.DEL do
-  def delete(db, keys) do
+  use Redex.Command
+
+  def exec(keys = [_ | _], state = state(quorum: quorum, db: db)) do
+    if Redex.readonly?(quorum) do
+      {:error, "READONLY You can't write against a read only replica."}
+    else
+      delete(db, keys)
+    end
+    |> reply(state)
+  end
+
+  def exec(_, state), do: wrong_arg_error("DEL") |> reply(state)
+
+  defp delete(db, keys) do
     case :mnesia.transaction(fn -> delete(db, keys, 0) end) do
       {:atomic, deleted} -> deleted
       _ -> {:error, "ERR delete operation failed"}
     end
   end
 
-  def delete(_db, [], acc), do: acc
+  defp delete(_db, [], acc), do: acc
 
-  def delete(db, [key | rest], acc) do
+  defp delete(db, [key | rest], acc) do
     now = System.system_time(:millisecond)
 
     case :mnesia.wread({:redex, {db, key}}) do

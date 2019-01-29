@@ -1,5 +1,11 @@
 defmodule Redex.Command.INFO do
+  use Redex.Command
+
   @sections ["keyspace"]
+
+  def exec([]), do: section(:all)
+  def exec([section]), do: String.downcase(section) |> section()
+  def exec(_), do: wrong_arg_error("INFO")
 
   def section(:all) do
     for section <- @sections do

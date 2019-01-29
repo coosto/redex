@@ -54,7 +54,7 @@ defmodule Redex do
   end
 
   def start_server(%{port: port, quorum: quorum}) do
-    opts = %{socket_opts: [port: port], num_acceptors: 20, max_connections: 10000}
+    opts = %{socket_opts: [port: port], num_acceptors: 20, max_connections: 10_000}
 
     Logger.info("[tcp] starting redex server on port #{port}")
 
@@ -105,7 +105,7 @@ defmodule Redex do
   end
 
   def readonly?(quorum) do
-    nodes = :mnesia.system_info(:running_db_nodes) |> IO.inspect()
+    nodes = :mnesia.system_info(:running_db_nodes)
     length(nodes) < quorum
   end
 

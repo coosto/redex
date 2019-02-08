@@ -46,6 +46,11 @@ For now only a small subset of the commands are supported:
 
 - GET
 - SET (without NX and XX arguments)
+- SETEX
+- INCR
+- INCRBY
+- DECR
+- DECRBY
 - DEL
 - TTL
 - PTTL

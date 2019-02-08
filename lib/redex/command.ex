@@ -4,6 +4,11 @@ defmodule Redex.Command do
   @commands [
     "GET",
     "SET",
+    "SETEX",
+    "INCR",
+    "INCRBY",
+    "DECR",
+    "DECRBY",
     "DEL",
     "TTL",
     "PTTL",
@@ -18,6 +23,12 @@ defmodule Redex.Command do
     quote do
       import Redex.Protocol.State
       import Redex.Command, only: [wrong_arg_error: 1]
+
+      unquote do
+        for cmd <- @commands do
+          quote do: alias(unquote(:"Elixir.Redex.Command.#{cmd}"))
+        end
+      end
 
       def exec(cmd, state) do
         cmd

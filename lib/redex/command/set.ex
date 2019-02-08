@@ -32,6 +32,7 @@ defmodule Redex.Command.SET do
 
   def exec(_, state), do: wrong_arg_error("SET") |> reply(state)
 
+  def args([args = %{}], _), do: {:ok, args}
   def args([], acc), do: {:ok, acc}
 
   def args([ex, arg | rest], acc = %{expiry: nil}) when ex in ["ex", "EX", "eX", "Ex"] do

@@ -1,12 +1,12 @@
 # Redex
 
-An Elixir implementaion of Redis
+Strong Consistent Masterless Replicated Redis implemented in Elixir.
 
 ## Why Redex?
 
-Running a distributed/replicated redis setup in a dynamic cluster environment like k8s is a nightmare.
+Running a replicated Redis setup in a dynamic cluster environment like kubernetes is a nightmare.
 Redis Sentinel is not suitable for dynamic clusters and is too complicated. It needs at least 3
-sentinel instances and in case of failover it takes too long to elect a new master.
+Sentinel instances and in case of failover it takes some time to elect a new master.
 Also writes are not consistent across the cluster and replication is done in an asynchronous manner.
 
 Redex solves all of the above issues.

@@ -12,6 +12,8 @@ defmodule Redex.Command do
     "DEL",
     "TTL",
     "PTTL",
+    "PUBLISH",
+    "SUBSCRIBE",
     "INFO",
     "PING",
     "QUIT",

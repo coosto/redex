@@ -5,6 +5,8 @@ defmodule Redex.Command.SUBSCRIBE do
     subscribe(channels, state)
   end
 
+  def exec(_, state), do: wrong_arg_error("SUBSCRIBE") |> reply(state)
+
   defp subscribe([], state), do: state
 
   defp subscribe([ch | channels], state = state(channels: subscribed)) do
@@ -12,6 +14,8 @@ defmodule Redex.Command.SUBSCRIBE do
       if ch in subscribed do
         subscribed
       else
+        :pg2.create(ch)
+        :pg2.join(ch, self())
         [ch | subscribed]
       end
 

@@ -54,6 +54,8 @@ For now only a small subset of the commands are supported:
 - DEL
 - TTL
 - PTTL
+- PUBLISH
+- SUBSCRIBE
 - PING
 - SELECT
 - FLUSHALL (without ASYNC argument)

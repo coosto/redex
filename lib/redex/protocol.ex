@@ -18,10 +18,22 @@ defmodule Redex.Protocol do
     |> loop()
   end
 
-  def loop(state = state(buffer: "")) do
-    state
-    |> recv(0)
-    |> loop()
+  def loop(state = state(transport: transport, socket: socket, buffer: "")) do
+    transport.setopts(socket, active: :once)
+
+    receive do
+      {:push, data} ->
+        data
+        |> reply(state)
+        |> loop()
+
+      {:tcp, ^socket, buffer} ->
+        state(state, buffer: buffer)
+        |> loop()
+
+      error ->
+        error
+    end
   end
 
   def loop(state = state(transport: transport, socket: socket)) do
@@ -36,6 +48,4 @@ defmodule Redex.Protocol do
         transport.close(socket)
     end
   end
-
-  def loop(error = {:error, _}), do: error
 end

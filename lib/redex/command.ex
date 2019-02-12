@@ -6,6 +6,7 @@ defmodule Redex.Command do
     "SET",
     "SETEX",
     "MSET",
+    "MGET",
     "INCR",
     "INCRBY",
     "DECR",

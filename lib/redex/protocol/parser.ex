@@ -3,8 +3,6 @@ defmodule Redex.Protocol.Parser do
   import Redex.Protocol.State
 
   crlf = string("\r\n")
-  ignore_space = string(" ") |> ignore()
-  ascii_word = ascii_string([not: 32, not: 10, not: 13], min: 1)
   empty_bulk_string = string("$0\r\n\r\n")
 
   short_bulk_strings =
@@ -35,11 +33,6 @@ defmodule Redex.Protocol.Parser do
              choice([large_bulk_string, times(bulk_string, min: 1)])
              |> label("a RESP array of bulk strings")
 
-  defparsecp :parse_inline,
-             choice([ascii_word, ignore_space])
-             |> repeat()
-             |> ignore(optional(string("\r")) |> string("\n"))
-
   def parse(state = state(buffer: buffer)) do
     case parse_array(buffer) do
       {:ok, acc, buffer, _, _, _} ->
@@ -55,20 +48,25 @@ defmodule Redex.Protocol.Parser do
       {:error, error, _, _, _, _} ->
         case buffer do
           <<"*", _::bytes>> -> {:error, "ERR Protocol error: #{error}"}
-          _ -> inline(state)
+          _ -> parse_inline(state)
         end
     end
   end
 
   def parse(error = {:error, _}), do: error
 
-  def inline(state = state(buffer: buffer)) do
-    case parse_inline(buffer) do
-      {:ok, acc, buffer, _, _, _} ->
-        {:ok, acc, state(state, buffer: buffer)}
+  def parse_inline(state = state(buffer: buffer)) do
+    buffer
+    |> String.replace("\r\n", "\n")
+    |> String.split("\n", parts: 2, trim: false)
+    |> case do
+      [_buffer] ->
+        state
+        |> recv(0)
+        |> parse()
 
-      {:error, _, _, _, _, _} ->
-        {:error, "ERR Protocol error"}
+      [line, buffer] ->
+        {:ok, String.split(line), state(state, buffer: buffer)}
     end
   end
 

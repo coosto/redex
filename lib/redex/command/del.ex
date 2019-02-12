@@ -22,7 +22,7 @@ defmodule Redex.Command.DEL do
   defp delete(_db, [], acc), do: acc
 
   defp delete(db, [key | rest], acc) do
-    now = System.system_time(:millisecond)
+    now = System.os_time(:millisecond)
 
     case :mnesia.wread({:redex, {db, key}}) do
       [{:redex, {^db, ^key}, _value, expiry}] when expiry > now ->

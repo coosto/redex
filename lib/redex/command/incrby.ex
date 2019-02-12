@@ -12,12 +12,11 @@ defmodule Redex.Command.INCRBY do
   def exec(_, state), do: wrong_arg_error("INCRBY") |> reply(state)
 
   def inc(key, inc, state = state(quorum: quorum, db: db)) do
-    now = System.system_time(:millisecond)
-    nodes = :mnesia.system_info(:running_db_nodes)
-
-    if length(nodes) < quorum do
+    if Redex.readonly?(quorum) do
       {:error, "READONLY You can't write against a read only replica."}
     else
+      now = System.os_time(:millisecond)
+
       {:atomic, result} =
         :mnesia.sync_transaction(fn ->
           case :mnesia.read(:redex, {db, key}, :write) do

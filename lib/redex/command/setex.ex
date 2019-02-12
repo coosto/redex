@@ -2,7 +2,7 @@ defmodule Redex.Command.SETEX do
   use Redex.Command
 
   def exec([key, ex, value], state) do
-    [key, value, %{expiry: System.system_time(:millisecond) + String.to_integer(ex) * 1000}]
+    [key, value, %{expiry: System.os_time(:millisecond) + String.to_integer(ex) * 1000}]
     |> SET.exec(state)
   end
 

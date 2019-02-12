@@ -3,7 +3,7 @@ defmodule Redex.Command.MGET do
 
   def exec(keys = [_ | _], state = state(db: db)) do
     keys
-    |> mget(db, System.system_time(:millisecond), [])
+    |> mget(db, System.os_time(:millisecond), [])
     |> reply(state)
   end
 

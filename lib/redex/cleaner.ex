@@ -18,7 +18,7 @@ defmodule Redex.Cleaner do
   end
 
   defp do_clean do
-    now = System.system_time(:millisecond)
+    now = System.os_time(:millisecond)
 
     case :mnesia.table_info(:redex, :size) do
       size when is_integer(size) and size > 0 ->

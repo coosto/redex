@@ -21,7 +21,7 @@ defmodule Redex.Command.INFO do
   def section(_section), do: ""
 
   def keyspace do
-    now = System.system_time(:millisecond)
+    now = System.os_time(:millisecond)
     first = :mnesia.dirty_first(:redex)
 
     keyspace =

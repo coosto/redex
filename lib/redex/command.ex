@@ -4,6 +4,7 @@ defmodule Redex.Command do
   @commands [
     "GET",
     "SET",
+    "GETSET",
     "SETEX",
     "MSET",
     "MGET",

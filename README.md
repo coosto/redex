@@ -45,7 +45,7 @@ This can be used to enforce consistency in netsplits.
 For now only a small subset of the commands are supported:
 
 - GET
-- SET (without NX and XX arguments)
+- SET
 - SETEX
 - MSET
 - INCR

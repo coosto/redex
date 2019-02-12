@@ -1,28 +1,8 @@
 defmodule Redex.Command do
   import Redex.Protocol.State
 
-  @commands [
-    "GET",
-    "SET",
-    "GETSET",
-    "SETEX",
-    "MSET",
-    "MGET",
-    "INCR",
-    "INCRBY",
-    "DECR",
-    "DECRBY",
-    "DEL",
-    "TTL",
-    "PTTL",
-    "PUBLISH",
-    "SUBSCRIBE",
-    "INFO",
-    "PING",
-    "QUIT",
-    "SELECT",
-    "FLUSHALL"
-  ]
+  @commands ~w/GET SET GETSET SETEX MSET MGET INCR INCRBY DECR DECRBY DEL
+               TTL PTTL PUBLISH SUBSCRIBE INFO PING SELECT FLUSHALL QUIT/
 
   defmacro __using__(_opts) do
     quote do

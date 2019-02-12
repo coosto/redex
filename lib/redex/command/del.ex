@@ -13,7 +13,7 @@ defmodule Redex.Command.DEL do
   def exec(_, state), do: wrong_arg_error("DEL") |> reply(state)
 
   defp delete(db, keys) do
-    case :mnesia.transaction(fn -> delete(db, keys, 0) end) do
+    case :mnesia.sync_transaction(fn -> delete(db, keys, 0) end) do
       {:atomic, deleted} -> deleted
       _ -> {:error, "ERR delete operation failed"}
     end

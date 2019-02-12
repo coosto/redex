@@ -47,6 +47,7 @@ For now only a small subset of the commands are supported:
 - GET
 - SET (without NX and XX arguments)
 - SETEX
+- MSET
 - INCR
 - INCRBY
 - DECR

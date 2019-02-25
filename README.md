@@ -57,6 +57,8 @@ For now only a small subset of the commands are supported:
 - DEL
 - LPUSH
 - LPOP
+- RPUSH
+- RPOP
 - PUBLISH
 - SUBSCRIBE
 - TTL

@@ -20,19 +20,22 @@ defmodule Redex.Command.INCRBY do
       {:atomic, result} =
         :mnesia.sync_transaction(fn ->
           case :mnesia.read(:redex, {db, key}, :write) do
-            [{:redex, {^db, ^key}, value, expiry}] when expiry > now ->
+            [{:redex, {^db, ^key}, value, expiry}] when expiry > now and is_binary(value) ->
               try do
                 {String.to_integer(value) + inc, expiry}
               rescue
                 ArgumentError -> {:error, "ERR value is not an integer or out of range"}
               end
 
+            [{:redex, {^db, ^key}, _value, expiry}] when expiry > now ->
+              {:error, "WRONGTYPE Operation against a key holding the wrong kind of value"}
+
             _ ->
               {inc, nil}
           end
           |> case do
-            error = {:error, _} ->
-              error
+            {:error, error} ->
+              {:error, error}
 
             {value, expiry} ->
               :mnesia.write({:redex, {db, key}, Integer.to_string(value), expiry})

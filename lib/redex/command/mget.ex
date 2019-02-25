@@ -11,7 +11,7 @@ defmodule Redex.Command.MGET do
 
   def mget([key | keys], db, now, acc) do
     case :mnesia.dirty_read(:redex, {db, key}) do
-      [{:redex, {^db, ^key}, value, expiry}] when expiry > now ->
+      [{:redex, {^db, ^key}, value, expiry}] when expiry > now and is_binary(value) ->
         mget(keys, db, now, [value | acc])
 
       _ ->

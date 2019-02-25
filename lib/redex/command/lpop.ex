@@ -1,7 +1,7 @@
-defmodule Redex.Command.GETSET do
+defmodule Redex.Command.LPOP do
   use Redex.Command
 
-  def exec([key, value], state = state(quorum: quorum, db: db)) do
+  def exec([key], state = state(quorum: quorum, db: db)) do
     if Redex.readonly?(quorum) do
       {:error, "READONLY You can't write against a read only replica."}
     else
@@ -10,7 +10,12 @@ defmodule Redex.Command.GETSET do
       {:atomic, result} =
         :mnesia.sync_transaction(fn ->
           case :mnesia.read(:redex, {db, key}, :write) do
-            [{:redex, {^db, ^key}, value, expiry}] when expiry > now and is_binary(value) ->
+            [{:redex, {^db, ^key}, [value], expiry}] when expiry > now ->
+              :mnesia.delete({:redex, {db, key}})
+              value
+
+            [{:redex, {^db, ^key}, [value | list], expiry}] when expiry > now ->
+              :mnesia.write({:redex, {db, key}, list, expiry})
               value
 
             [{:redex, {^db, ^key}, _value, expiry}] when expiry > now ->
@@ -19,14 +24,6 @@ defmodule Redex.Command.GETSET do
             _ ->
               nil
           end
-          |> case do
-            {:error, error} ->
-              {:error, error}
-
-            old_value ->
-              :mnesia.write({:redex, {db, key}, value, nil})
-              old_value
-          end
         end)
 
       result
@@ -34,5 +31,5 @@ defmodule Redex.Command.GETSET do
     |> reply(state)
   end
 
-  def exec(_, state), do: wrong_arg_error("GETSET") |> reply(state)
+  def exec(_, state), do: wrong_arg_error("LPOP") |> reply(state)
 end

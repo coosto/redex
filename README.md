@@ -55,10 +55,12 @@ For now only a small subset of the commands are supported:
 - DECR
 - DECRBY
 - DEL
-- TTL
-- PTTL
+- LPUSH
+- LPOP
 - PUBLISH
 - SUBSCRIBE
+- TTL
+- PTTL
 - PING
 - SELECT
 - FLUSHALL (without ASYNC argument)

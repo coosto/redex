@@ -2,6 +2,7 @@ defmodule Redex.Command do
   import Redex.Protocol.State
 
   @commands ~w/GET SET GETSET SETEX MSET MGET INCR INCRBY DECR DECRBY DEL
+               LPUSH LPOP
                TTL PTTL PUBLISH SUBSCRIBE INFO PING SELECT FLUSHALL QUIT/
 
   defmacro __using__(_opts) do

@@ -57,10 +57,13 @@ For now only a small subset of the commands are supported:
 - DEL
 - LPUSH
 - LPOP
+- LLEN
 - RPUSH
 - RPOP
 - PUBLISH
 - SUBSCRIBE
+- EXPIRE
+- PEXPIRE
 - TTL
 - PTTL
 - PING

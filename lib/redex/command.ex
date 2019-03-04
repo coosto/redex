@@ -1,9 +1,9 @@
 defmodule Redex.Command do
   import Redex.Protocol.State
 
-  @commands ~w/GET SET GETSET SETEX MSET MGET INCR INCRBY DECR DECRBY DEL
-               LPUSH LPOP RPUSH RPOP
-               TTL PTTL PUBLISH SUBSCRIBE INFO PING SELECT FLUSHALL QUIT/
+  @commands File.ls!("#{__DIR__}/command")
+            |> Enum.map(&String.replace(&1, ~r/\.ex$/, ""))
+            |> Enum.map(&String.upcase/1)
 
   defmacro __using__(_opts) do
     quote do

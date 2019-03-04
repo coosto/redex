@@ -24,7 +24,7 @@ defmodule Redex.Protocol.Parser do
   defparsecp :parse_array,
              string("*")
              |> ignore()
-             |> integer(min: 1, max: 3)
+             |> integer(min: 1, max: 6)
              |> ignore(crlf)
              |> label("a * followed by a number terminated with a CRLF")
              |> repeat(bulk_string)

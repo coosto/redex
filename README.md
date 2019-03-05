@@ -58,6 +58,7 @@ For now only a small subset of the commands are supported:
 - LPUSH
 - LPOP
 - LLEN
+- LRANGE
 - RPUSH
 - RPOP
 - PUBLISH

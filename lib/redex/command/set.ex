@@ -49,11 +49,17 @@ defmodule Redex.Command.SET do
   def args([args = %{}], _), do: {:ok, args}
   def args([], acc), do: {:ok, acc}
 
-  def args([ex, arg | rest], acc = %{expiry: nil}) when ex in ["ex", "EX", "eX", "Ex"],
-    do: args(rest, %{acc | expiry: System.os_time(:millisecond) + String.to_integer(arg) * 1000})
+  def args([ex, arg | rest], acc = %{expiry: nil}) when ex in ["ex", "EX", "eX", "Ex"] do
+    args(rest, %{acc | expiry: System.os_time(:millisecond) + String.to_integer(arg) * 1000})
+  rescue
+    ArgumentError -> {:error, "ERR value is not an integer or out of range"}
+  end
 
-  def args([px, arg | rest], acc = %{expiry: nil}) when px in ["px", "PX", "pX", "Px"],
-    do: args(rest, %{acc | expiry: System.os_time(:millisecond) + String.to_integer(arg)})
+  def args([px, arg | rest], acc = %{expiry: nil}) when px in ["px", "PX", "pX", "Px"] do
+    args(rest, %{acc | expiry: System.os_time(:millisecond) + String.to_integer(arg)})
+  rescue
+    ArgumentError -> {:error, "ERR value is not an integer or out of range"}
+  end
 
   def args([nx | rest], acc = %{xx: false}) when nx in ["nx", "NX", "nX", "Nx"],
     do: args(rest, %{acc | nx: true})

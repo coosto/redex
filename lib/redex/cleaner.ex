@@ -4,16 +4,23 @@ defmodule Redex.Cleaner do
   require Logger
 
   @clean_interval 600_000
+  @lock :redex_cleaner
+
   def start_link([]) do
+    :mnesia.wait_for_tables([:redex], :infinity)
     Task.start_link(__MODULE__, :clean, [])
   end
 
   def clean do
-    :global.set_lock({:cleaner, self()})
-    Process.sleep(@clean_interval)
-    do_clean()
-    :global.del_lock({:cleaner, self()})
-    Process.sleep(@clean_interval * length(Node.list(:connected)))
+    :global.trans(
+      {@lock, self()},
+      fn ->
+        Process.sleep(@clean_interval)
+        do_clean()
+      end,
+      [node() | Node.list()]
+    )
+
     clean()
   end
 
@@ -39,8 +46,8 @@ defmodule Redex.Cleaner do
     next = :mnesia.dirty_next(:redex, key)
 
     case :mnesia.dirty_read(:redex, key) do
-      [{:redex, ^key, _value, expiry}] when expiry < now ->
-        :mnesia.dirty_delete(:redex, key)
+      [object = {:redex, ^key, _value, expiry}] when expiry < now ->
+        :mnesia.dirty_delete_object(object)
         do_clean(now, next, deleted + 1)
 
       _ ->

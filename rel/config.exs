@@ -38,6 +38,7 @@ environment :prod do
   set include_erts: true
   set include_src: false
   set cookie: :"G>g][QGLe8l8Npl)v.03zA^|C$PBWIDF{N^B70C[1W[eyuSt}xsM4=y/f2hdu?J5"
+  set vm_args: "rel/vm.args"
 end
 
 # You may define one or more releases in this file.
@@ -50,6 +51,5 @@ release :redex do
   set applications: [
     :runtime_tools
   ]
-  set vm_args: "rel/vm.args.eex"
 end
 

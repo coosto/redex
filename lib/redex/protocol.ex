@@ -7,7 +7,7 @@ defmodule Redex.Protocol do
 
   alias Redex.Command
 
-  def start_link(ref, _socket, transport, quorum: quorum) do
+  def start_link(ref, _socket, transport, quorum) do
     Task.start_link(__MODULE__, :init, [ref, transport, quorum])
   end
 

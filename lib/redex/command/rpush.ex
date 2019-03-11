@@ -2,7 +2,7 @@ defmodule Redex.Command.RPUSH do
   use Redex.Command
 
   def exec([key | values], state = state(quorum: quorum, db: db)) when values != [] do
-    if Redex.readonly?(quorum) do
+    if readonly?(quorum) do
       {:error, "READONLY You can't write against a read only replica."}
     else
       now = System.os_time(:millisecond)

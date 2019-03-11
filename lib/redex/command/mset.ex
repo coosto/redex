@@ -5,7 +5,7 @@ defmodule Redex.Command.MSET do
     if length(pairs) |> rem(2) != 0 do
       wrong_arg_error("MSET")
     else
-      if Redex.readonly?(quorum) do
+      if readonly?(quorum) do
         {:error, "READONLY You can't write against a read only replica."}
       else
         case :mnesia.sync_transaction(fn -> mset(db, pairs) end) do

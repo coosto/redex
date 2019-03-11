@@ -2,7 +2,7 @@ defmodule Redex.Command.DEL do
   use Redex.Command
 
   def exec(keys = [_ | _], state = state(quorum: quorum, db: db)) do
-    if Redex.readonly?(quorum) do
+    if readonly?(quorum) do
       {:error, "READONLY You can't write against a read only replica."}
     else
       delete(db, keys)

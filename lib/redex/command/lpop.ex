@@ -2,7 +2,7 @@ defmodule Redex.Command.LPOP do
   use Redex.Command
 
   def exec([key], state = state(quorum: quorum, db: db)) do
-    if Redex.readonly?(quorum) do
+    if readonly?(quorum) do
       {:error, "READONLY You can't write against a read only replica."}
     else
       now = System.os_time(:millisecond)

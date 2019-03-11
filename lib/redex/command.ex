@@ -8,7 +8,7 @@ defmodule Redex.Command do
   defmacro __using__(_opts) do
     quote do
       import Redex.Protocol.State
-      import Redex.Command, only: [wrong_arg_error: 1]
+      import Redex.Command, only: [wrong_arg_error: 1, readonly?: 1]
 
       unquote do
         for cmd <- @commands do
@@ -48,4 +48,9 @@ defmodule Redex.Command do
   def exec(_cmd, state), do: reply({:error, "ERR invalid command"}, state)
 
   def wrong_arg_error(cmd), do: {:error, "ERR wrong number of arguments for '#{cmd}' command"}
+
+  def readonly?(quorum) do
+    nodes = :mnesia.system_info(:running_db_nodes)
+    length(nodes) < quorum
+  end
 end

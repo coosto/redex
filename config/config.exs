@@ -1,34 +1,27 @@
-# This file is responsible for configuring your application
-# and its dependencies with the aid of the Mix.Config module.
 use Mix.Config
-
-# This configuration is loaded before any dependency and is restricted
-# to this project. If another project depends on this project, this
-# file won't be loaded nor affect the parent project. For this reason,
-# if you want to provide default values for your application for
-# 3rd-party users, it should be done in your "mix.exs" file.
-
-# You can configure your application as:
-#
-#     config :redex, key: :value
-#
-# and access this configuration in your application as:
-#
-#     Application.get_env(:redex, :key)
-#
-# You can also configure a 3rd-party app:
-#
-#     config :logger, level: :info
-#
 
 config :redex,
   port: {:system, :integer, "REDEX_PORT", 6379},
-  quorum: {:system, :integer, "REDEX_QUORUM", 2}
+  quorum: {:system, :integer, "REDEX_QUORUM", if(Mix.env() == :prod, do: 2, else: 1)},
+  cluster: {:system, :atom, "REDEX_CLUSTER", if(Mix.env() == :prod, do: :k8s, else: :gossip)}
 
-# It is also possible to import configuration files, relative to this
-# directory. For example, you can emulate configuration per environment
-# by uncommenting the line below and defining dev.exs, test.exs and such.
-# Configuration from the imported file will override the ones defined
-# here (which is why it is important to import them last).
-#
-import_config "#{Mix.env()}.exs"
+config :libcluster, :topologies,
+  k8s: [
+    strategy: Cluster.Strategy.Kubernetes,
+    config: [
+      kubernetes_ip_lookup_mode: :pods,
+      kubernetes_node_basename: "redex",
+      kubernetes_namespace: {:system, "REDEX_K8S_NAMESPACE", nil},
+      kubernetes_selector: {:system, "REDEX_K8S_SELECTOR", "app=redex"}
+    ]
+  ],
+  gossip: [
+    strategy: Cluster.Strategy.Gossip,
+    config: [
+      port: 45892,
+      if_addr: "0.0.0.0",
+      multicast_addr: "230.1.1.251",
+      multicast_ttl: 1,
+      secret: {:system, "REDEX_GOSSIP_SECRET", "REDEX"}
+    ]
+  ]

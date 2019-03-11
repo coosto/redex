@@ -12,7 +12,7 @@ defmodule Redex.Command.PEXPIRE do
   def exec(_, state), do: wrong_arg_error("PEXPIRE") |> reply(state)
 
   def expire(key, timeout, state = state(quorum: quorum, db: db)) do
-    if Redex.readonly?(quorum) do
+    if readonly?(quorum) do
       {:error, "READONLY You can't write against a read only replica."}
     else
       now = System.os_time(:millisecond)

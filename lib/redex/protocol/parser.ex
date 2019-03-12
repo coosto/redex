@@ -3,7 +3,7 @@ defmodule Redex.Protocol.Parser do
   import Redex.Protocol.State
 
   crlf = string("\r\n")
-  empty_bulk_string = string("$0\r\n\r\n")
+  empty_bulk_string = string("$0\r\n\r\n") |> replace("")
 
   short_bulk_strings =
     for len <- 1..24 do
@@ -55,9 +55,9 @@ defmodule Redex.Protocol.Parser do
 
   def parse(error = {:error, _}), do: error
 
-  def parse_inline(state = state(buffer: buffer)) do
+  defp parse_inline(state = state(buffer: buffer)) do
     buffer
-    |> String.replace("\r\n", "\n")
+    |> String.replace("\r\n", "\n", global: false)
     |> String.split("\n", parts: 2, trim: false)
     |> case do
       [_buffer] ->

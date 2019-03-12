@@ -6,6 +6,7 @@ defmodule Redex.MixProject do
       app: :redex,
       version: "0.3.0",
       elixir: "~> 1.8",
+      elixirc_paths: if(Mix.env() == :test, do: ["lib", "test/mock"], else: ["lib"]),
       start_permanent: Mix.env() == :prod,
       deps: deps()
     ]
@@ -25,7 +26,8 @@ defmodule Redex.MixProject do
       {:libcluster, github: "bitwalker/libcluster"},
       {:distillery, "~> 2.0"},
       {:nimble_parsec, "~> 0.5.0"},
-      {:dialyxir, "~> 1.0.0-rc.4", only: [:dev], runtime: false}
+      {:dialyxir, "~> 1.0.0-rc.4", only: [:dev], runtime: false},
+      {:stream_data, "~> 0.4.2", only: [:test]}
     ]
   end
 end

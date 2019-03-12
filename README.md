@@ -103,3 +103,11 @@ For now only a small subset of the commands are supported:
 - FLUSHALL (without ASYNC argument)
 - INFO (keyspace section only)
 - QUIT
+
+## License
+
+Redex source code is released under Apache 2 License.
+
+## Credits
+
+Made with :heart: by [@farhadi](https://github.com/farhadi), supported by [Coosto](https://www.coosto.com/en), [@coostodev](https://twitter.com/coostodev)

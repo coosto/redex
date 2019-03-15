@@ -8,7 +8,7 @@ defmodule Redex.Protocol.State do
     socket: nil,
     buffer: "",
     acc: [],
-    quorum: 2,
+    quorum: 1,
     db: 0,
     channels: []
   )

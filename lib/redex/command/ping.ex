@@ -1,7 +1,7 @@
 defmodule Redex.Command.PING do
   use Redex.Command
 
-  def exec([]), do: :pong
-  def exec([message]), do: message
-  def exec(_), do: wrong_arg_error("PING")
+  defp exec([]), do: :pong
+  defp exec([message]), do: message
+  defp exec(_), do: wrong_arg_error("PING")
 end

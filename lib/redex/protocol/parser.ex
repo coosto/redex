@@ -115,7 +115,7 @@ defmodule Redex.Protocol.Parser do
         |> state(acc: acc ++ strings, buffer: buffer)
         |> parse_cont(len + length(strings))
 
-      {:error, _, _, _, _, _} when byte_size(buffer) < 32 ->
+      {:error, _, _, _, _, _} when byte_size(buffer) < 17 ->
         state
         |> recv(0)
         |> parse_cont(len)
@@ -125,6 +125,9 @@ defmodule Redex.Protocol.Parser do
     end
   end
 
-  defp parse_cont(state(), _), do: {:error, "ERR Protocol error"}
+  defp parse_cont(state(acc: acc), _) do
+    {:error, "ERR Protocol error: expected a RESP array of length #{hd(acc)}"}
+  end
+
   defp parse_cont(error = {:error, _}, _), do: error
 end

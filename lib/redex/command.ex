@@ -1,8 +1,8 @@
 defmodule Redex.Command do
   import Redex.Protocol.State
 
-  @commands File.ls!("#{__DIR__}/command")
-            |> Enum.map(&String.replace(&1, ~r/\.ex$/, ""))
+  @commands Path.wildcard("#{__DIR__}/command/*.ex")
+            |> Enum.map(&Path.basename(&1, ".ex"))
             |> Enum.map(&String.upcase/1)
 
   defmacro __using__(_opts) do

@@ -4,7 +4,7 @@ defmodule Redex.Command.TTL do
   def exec([key], state) do
     case PTTL.pttl(key, state) do
       ttl when ttl > 0 ->
-        trunc(ttl / 1000)
+        Float.ceil(ttl / 1000) |> trunc()
 
       result ->
         result

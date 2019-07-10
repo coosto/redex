@@ -2,12 +2,13 @@ defmodule Redex.Command.PUBLISH do
   use Redex.Command
 
   def exec([ch, msg], state) do
+    :pg2.create(ch)
     case :pg2.get_members(ch) do
       {:error, _} ->
         0
 
       subscribers ->
-        for pid <- subscribers, do: send(pid, {:push, ["message", ch, msg]})
+        Manifold.send(subscribers, {:push, ["message", ch, msg]})
         length(subscribers)
     end
     |> reply(state)

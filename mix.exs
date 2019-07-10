@@ -21,6 +21,7 @@ defmodule Redex.MixProject do
 
   defp deps do
     [
+      {:manifold, "~> 1.2"},
       {:ranch, "~> 1.7"},
       {:libcluster, "~> 3.1"},
       {:nimble_parsec, "~> 0.5.0"},

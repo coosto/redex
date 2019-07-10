@@ -1,31 +1,26 @@
 FROM elixir:alpine as builder
 
-RUN apk update && apk --no-cache --update add git
-
-ENV MIX_ENV=prod REPLACE_OS_VARS=true TERM=xterm
+ENV MIX_ENV=prod
 
 WORKDIR /opt/redex
 
 RUN mix local.rebar --force &&\
     mix local.hex --force
 
-# Cache elixir deps
+# Cache dependencies
 COPY mix.exs mix.lock ./
 RUN mix deps.get
 COPY config ./config
 RUN mix deps.compile
 
-COPY . .
+COPY rel ./rel
+COPY lib ./lib
 
-RUN mix release --env=prod --verbose \
-    && mkdir /opt/release \
-    && tar xf _build/prod/rel/redex/releases/0.3.0/redex.tar.gz -C /opt/release
+RUN mix release --path=/opt/release
 
 FROM alpine:latest
 
-RUN apk update && apk --no-cache --update add bash openssl
-
-ENV MIX_ENV=prod REPLACE_OS_VARS=true
+RUN apk update && apk --no-cache --update add ncurses-libs openssl
 
 WORKDIR /opt/redex
 
@@ -33,4 +28,4 @@ EXPOSE 6379
 
 COPY --from=builder /opt/release .
 
-CMD ["bin/redex", "foreground"]
+CMD ["./bin/redex", "start"]

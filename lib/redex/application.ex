@@ -6,10 +6,9 @@ defmodule Redex.Application do
   use Application
 
   def start(_type, _args) do
-    topologies = Confex.fetch_env!(:libcluster, :topologies)
-    topologies = Keyword.take(topologies, [Confex.fetch_env!(:redex, :cluster)])
-    quorum = Confex.fetch_env!(:redex, :quorum)
-    port = Confex.fetch_env!(:redex, :port)
+    topologies = Application.fetch_env!(:libcluster, :topologies)
+    quorum = Application.fetch_env!(:redex, :quorum)
+    port = Application.fetch_env!(:redex, :port)
 
     server_opts = %{
       socket_opts: [port: port],

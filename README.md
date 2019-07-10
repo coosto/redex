@@ -51,15 +51,15 @@ data over multiple nodes, nor persisting data to disk.
 Redex can be configured using the following env variables:
 
 - REDEX_IP
-  must be configured to current node's IP address on which other nodes can communicate with it
-- REDEX_CLUSTER
-  cluster strategy k8s/gossip (default: k8s)
+  node's IP address on which other nodes can communicate with it.
+  By default `hostname -i` is used to detect node's IP address.
 - REDEX_K8S_NAMESPACE and REDEX_K8S_SELECTOR
-  is used to discover cluster nodes (Using k8s API)
+  are used to discover redex pods using k8s API to form/heal redex cluster.
+  in case these configs are not set, gossip strategy will be used to discover other nodes in the cluster.
 - REDEX_GOSSIP_SECRET
-  secret to be used in gossip strategy
+  secret to be used in gossip strategy. Defaults to "REDEX".
 - REDEX_QUORUM
-  minimum number of nodes that redex cluster has to obtain in order to become operational
+  minimum number of nodes that redex cluster has to obtain in order to become operational. Defaults to 2.
 - REDEX_PORT
   redex port number (defaults to 6379).
 

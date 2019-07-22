@@ -7,7 +7,7 @@ defmodule Redex.Command.SELECT do
     ArgumentError -> reply({:error, "ERR invalid DB index"}, state)
   else
     db when db in 0..100 ->
-      reply(:ok, state(state, db: db))
+      reply(:ok, %{state | db: db})
 
     _ ->
       reply({:error, "ERR DB index is out of range"}, state)

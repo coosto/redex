@@ -3,6 +3,7 @@ defmodule Redex.Command.PUBLISH do
 
   def exec([ch, msg], state) do
     :pg2.create(ch)
+
     case :pg2.get_members(ch) do
       {:error, _} ->
         0

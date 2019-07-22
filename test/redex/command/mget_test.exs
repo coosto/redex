@@ -1,62 +1,110 @@
 defmodule Redex.Command.MgetTest do
-  use ExUnit.Case
+  use ExUnit.Case, async: true
+  use ExUnitProperties
 
-  import Redex.Protocol.State
-  import Redex.Mock.State
+  import Mox
+  import Redex.DataGenerators
   import Redex.Command.MGET
 
-  setup_all do
-    [state: mock_state()]
+  setup :verify_on_exit!
+
+  property "MGET non existing keys" do
+    check all state = %{db: db} <- state(),
+              keys <- list_of(binary(), min_length: 1) do
+      result =
+        for key <- keys do
+          no_record = no_or_expired_record(state, key: key) |> Enum.at(0)
+
+          MnesiaMock
+          |> expect(:dirty_read, fn :redex, {^db, ^key} -> no_record end)
+
+          nil
+        end
+
+      ProtocolMock
+      |> expect(:reply, fn ^result, ^state -> state end)
+
+      assert state == exec(keys, state)
+    end
   end
 
-  setup %{state: state} do
-    {:atomic, :ok} = :mnesia.clear_table(:redex)
-    reset_state(state)
-    :ok
+  property "MGET existing keys" do
+    check all state = %{db: db} <- state(),
+              keys <- list_of(binary(), min_length: 1) do
+      values =
+        for key <- keys do
+          record = {:redex, {^db, ^key}, value, _} = record(state, key: key) |> Enum.at(0)
+
+          MnesiaMock
+          |> expect(:dirty_read, fn :redex, {^db, ^key} -> [record] end)
+
+          value
+        end
+
+      ProtocolMock
+      |> expect(:reply, fn ^values, ^state -> state end)
+
+      assert state == exec(keys, state)
+    end
   end
 
-  test "MGET non existing keys", %{state: state} do
-    result = exec(["a", "b"], state) |> get_output()
-    assert result == "*2\r\n$-1\r\n$-1\r\n"
+  property "MGET a combination of existing and non exsisting keys" do
+    check all state = %{db: db} <- state(),
+              keys <- uniq_list_of(binary(), min_length: 2),
+              existing_keys = Enum.take_random(keys, Enum.random(1..(length(keys) - 1))) do
+      values =
+        for key <- keys do
+          record =
+            if key in existing_keys do
+              record(state, key: key) |> Enum.take(1)
+            else
+              no_or_expired_record(state, key: key) |> Enum.at(0)
+            end
+
+          MnesiaMock
+          |> expect(:dirty_read, fn :redex, {^db, ^key} -> record end)
+
+          if key in existing_keys do
+            [{:redex, {^db, ^key}, value, _}] = record
+            value
+          end
+        end
+
+      ProtocolMock
+      |> expect(:reply, fn ^values, ^state -> state end)
+
+      assert state == exec(keys, state)
+    end
   end
 
-  test "MGET existing keys", %{state: state} do
-    :ok = :mnesia.dirty_write({:redex, {0, "a"}, "123", nil})
-    :ok = :mnesia.dirty_write({:redex, {0, "b"}, "456", nil})
-    result = exec(["a", "b"], state) |> get_output()
-    assert result == "*2\r\n$3\r\n123\r\n$3\r\n456\r\n"
+  property "MGET keys with a wrong kind of value" do
+    check all state = %{db: db} <- state(),
+              keys <- uniq_list_of(binary(), min_length: 1) do
+      result =
+        for key <- keys do
+          record = record(state, key: key, type: :list) |> Enum.at(0)
+
+          MnesiaMock
+          |> expect(:dirty_read, fn :redex, {^db, ^key} -> [record] end)
+
+          nil
+        end
+
+      ProtocolMock
+      |> expect(:reply, fn ^result, ^state -> state end)
+
+      assert state == exec(keys, state)
+    end
   end
 
-  test "MGET a combination of existing and non exsisting keys", %{state: state} do
-    :ok = :mnesia.dirty_write({:redex, {0, "a"}, "123", nil})
-    result = exec(["a", "b"], state) |> get_output()
-    assert result == "*2\r\n$3\r\n123\r\n$-1\r\n"
-  end
+  test "MGET with wrong number of arguments" do
+    error = {:error, "ERR wrong number of arguments for 'MGET' command"}
 
-  test "MGET keys from db 1", %{state: state} do
-    :ok = :mnesia.dirty_write({:redex, {1, "a"}, "123", nil})
-    :ok = :mnesia.dirty_write({:redex, {1, "b"}, "123", nil})
-    result = exec(["a", "b"], state(state, db: 1)) |> get_output()
-    assert result == "*2\r\n$3\r\n123\r\n$3\r\n123\r\n"
-  end
+    state = state()
 
-  test "MGET expired keys", %{state: state} do
-    expiry = System.os_time(:millisecond) - 1
-    :ok = :mnesia.dirty_write({:redex, {0, "a"}, "123", expiry})
-    :ok = :mnesia.dirty_write({:redex, {0, "b"}, "123", expiry})
-    result = exec(["a", "b"], state) |> get_output()
-    assert result == "*2\r\n$-1\r\n$-1\r\n"
-  end
+    ProtocolMock
+    |> expect(:reply, fn ^error, ^state -> state end)
 
-  test "MGET keys with a wrong kind of value", %{state: state} do
-    :ok = :mnesia.dirty_write({:redex, {0, "a"}, ["123"], nil})
-    :ok = :mnesia.dirty_write({:redex, {0, "b"}, "123", nil})
-    result = exec(["a", "b"], state) |> get_output()
-    assert result == "*2\r\n$-1\r\n$3\r\n123\r\n"
-  end
-
-  test "MGET with wrong number of arguments", %{state: state} do
-    result = exec([], state) |> get_output()
-    assert result == "-ERR wrong number of arguments for 'MGET' command\r\n"
+    assert state == exec([], state)
   end
 end

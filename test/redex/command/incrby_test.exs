@@ -1,65 +1,131 @@
 defmodule Redex.Command.IncrbyTest do
-  use ExUnit.Case
+  use ExUnit.Case, async: true
+  use ExUnitProperties
 
-  import Redex.Protocol.State
-  import Redex.Mock.State
+  import Mox
+  import Redex.DataGenerators
   import Redex.Command.INCRBY
 
-  setup_all do
-    [state: mock_state()]
+  setup :verify_on_exit!
+
+  property "INCRBY a non existing or expired key" do
+    check all state = %{db: db} <- state(),
+              nodes <- nodes(state),
+              key <- binary(),
+              no_record <- no_or_expired_record(state, key: key),
+              value <- integer(),
+              str_val = to_string(value) do
+      MnesiaMock
+      |> expect(:system_info, fn :running_db_nodes -> nodes end)
+      |> expect(:sync_transaction, fn f -> {:atomic, f.()} end)
+      |> expect(:read, fn :redex, {^db, ^key}, :write -> no_record end)
+      |> expect(:write, fn :redex, {:redex, {^db, ^key}, ^str_val, nil}, :write -> :ok end)
+
+      ProtocolMock
+      |> expect(:reply, fn ^value, ^state -> state end)
+
+      assert state == exec([key, str_val], state)
+    end
   end
 
-  setup %{state: state} do
-    {:atomic, :ok} = :mnesia.clear_table(:redex)
-    reset_state(state)
-    :ok
+  property "INCRBY an existing key" do
+    check all state <- state(),
+              nodes <- nodes(state),
+              record = {:redex, {db, key}, old_value, expiry} <- record(state, type: :int),
+              incrby <- integer(),
+              new_value = String.to_integer(old_value) + incrby,
+              str_val = to_string(new_value) do
+      MnesiaMock
+      |> expect(:system_info, fn :running_db_nodes -> nodes end)
+      |> expect(:sync_transaction, fn f -> {:atomic, f.()} end)
+      |> expect(:read, fn :redex, {^db, ^key}, :write -> [record] end)
+      |> expect(:write, fn :redex, {:redex, {^db, ^key}, ^str_val, ^expiry}, :write -> :ok end)
+
+      ProtocolMock
+      |> expect(:reply, fn ^new_value, ^state -> state end)
+
+      assert state == exec([key, to_string(incrby)], state)
+    end
   end
 
-  test "INCRBY non existing key", %{state: state} do
-    result = exec(["a", "2"], state) |> get_output()
-    assert result == ":2\r\n"
+  property "INCRBY in readonly mode" do
+    error = {:error, "READONLY You can't write against a read only replica."}
+
+    check all state <- state(),
+              nodes <- nodes(state, readonly: true),
+              {:redex, {_, key}, value, _} <- record(state, type: :int) do
+      MnesiaMock
+      |> expect(:system_info, fn :running_db_nodes -> nodes end)
+
+      ProtocolMock
+      |> expect(:reply, fn ^error, ^state -> state end)
+
+      assert state == exec([key, value], state)
+    end
   end
 
-  test "INCRBY existing key", %{state: state} do
-    :ok = :mnesia.dirty_write({:redex, {0, "a"}, "2", nil})
-    result = exec(["a", "3"], state) |> get_output()
-    assert result == ":5\r\n"
+  property "INCRBY a key with a wrong kind of value" do
+    error = {:error, "WRONGTYPE Operation against a key holding the wrong kind of value"}
+
+    check all state <- state(),
+              nodes <- nodes(state),
+              record = {:redex, {db, key}, _, _} <- record(state, type: :list),
+              incrby <- integer(),
+              str_val = to_string(incrby) do
+      MnesiaMock
+      |> expect(:system_info, fn :running_db_nodes -> nodes end)
+      |> expect(:sync_transaction, fn f -> {:atomic, f.()} end)
+      |> expect(:read, fn :redex, {^db, ^key}, :write -> [record] end)
+
+      ProtocolMock
+      |> expect(:reply, fn ^error, ^state -> state end)
+
+      assert state == exec([key, str_val], state)
+    end
   end
 
-  test "INCRBY in readonly mode", %{state: state} do
-    result = exec(["a", "1"], state(state, quorum: 2)) |> get_output()
-    assert result == "-READONLY You can't write against a read only replica.\r\n"
+  property "INCRBY a key having a non integer value" do
+    error = {:error, "ERR value is not an integer or out of range"}
+
+    check all state <- state(),
+              nodes <- nodes(state),
+              record = {:redex, {db, key}, _, _} <- record(state, type: binary(min_length: 3)),
+              incrby <- integer(),
+              str_val = to_string(incrby) do
+      MnesiaMock
+      |> expect(:system_info, fn :running_db_nodes -> nodes end)
+      |> expect(:sync_transaction, fn f -> {:atomic, f.()} end)
+      |> expect(:read, fn :redex, {^db, ^key}, :write -> [record] end)
+
+      ProtocolMock
+      |> expect(:reply, fn ^error, ^state -> state end)
+
+      assert state == exec([key, str_val], state)
+    end
   end
 
-  test "INCRBY a key in db 1", %{state: state} do
-    :ok = :mnesia.dirty_write({:redex, {1, "a"}, "5", nil})
-    result = exec(["a", "2"], state(state, db: 1)) |> get_output()
-    assert result == ":7\r\n"
+  property "INCRBY a key by a non integer value" do
+    error = {:error, "ERR value is not an integer or out of range"}
+
+    check all state <- state(),
+              key <- binary(),
+              value <- binary(min_length: 3) do
+      ProtocolMock
+      |> expect(:reply, fn ^error, ^state -> state end)
+
+      assert state == exec([key, value], state)
+    end
   end
 
-  test "INCRBY an expired key", %{state: state} do
-    expiry = System.os_time(:millisecond) - 1
-    :ok = :mnesia.dirty_write({:redex, {0, "a"}, "123", expiry})
-    result = exec(["a", "3"], state) |> get_output()
-    assert result == ":3\r\n"
-  end
+  property "INCRBY with wrong number of arguments" do
+    error = {:error, "ERR wrong number of arguments for 'INCRBY' command"}
 
-  test "INCRBY a key with a wrong kind of value", %{state: state} do
-    :ok = :mnesia.dirty_write({:redex, {0, "a"}, ["123"], nil})
-    result = exec(["a", "1"], state) |> get_output()
-    assert result == "-WRONGTYPE Operation against a key holding the wrong kind of value\r\n"
-  end
+    check all args <- filter(list_of(binary()), &(length(&1) != 2)),
+              state <- state() do
+      ProtocolMock
+      |> expect(:reply, fn ^error, ^state -> state end)
 
-  test "INCRBY with a non integer value", %{state: state} do
-    result = exec(["a", "b"], state) |> get_output()
-    assert result == "-ERR value is not an integer or out of range\r\n"
-  end
-
-  test "INCRBY with wrong number of arguments", %{state: state} do
-    result = exec(["a"], state) |> get_output()
-    assert result == "-ERR wrong number of arguments for 'INCRBY' command\r\n"
-
-    result = exec(["a", "b", "c"], reset_state(state)) |> get_output()
-    assert result == "-ERR wrong number of arguments for 'INCRBY' command\r\n"
+      assert state == exec(args, state)
+    end
   end
 end

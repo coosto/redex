@@ -22,7 +22,6 @@ defmodule Redex.Manager do
       ram_copies: [node | nodes],
       attributes: [:key, :value, :expiry]
     )
-    |> IO.inspect()
     |> case do
       {:atomic, :ok} ->
         Logger.info("redex table successfully created")

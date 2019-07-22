@@ -3,24 +3,24 @@ defmodule Redex.Command.SET do
 
   @default_args %{expiry: nil, nx: false, xx: false}
 
-  def exec([key, value | args], state = state(quorum: quorum, db: db)) do
+  def exec([key, value | args], state = %State{quorum: quorum, db: db}) do
     case args(args, @default_args) do
       {:ok, args} ->
-        nodes = :mnesia.system_info(:running_db_nodes)
+        nodes = Mnesia.system_info(:running_db_nodes)
 
         cond do
           length(nodes) < quorum ->
             {:error, "READONLY You can't write against a read only replica."}
 
           length(nodes) == 1 and not args.nx and not args.xx ->
-            :ok = :mnesia.dirty_write({:redex, {db, key}, value, args.expiry})
+            :ok = Mnesia.dirty_write(:redex, {:redex, {db, key}, value, args.expiry})
 
           true ->
             {:atomic, result} =
-              :mnesia.sync_transaction(fn ->
+              Mnesia.sync_transaction(fn ->
                 if args.xx or args.nx do
                   key_exists =
-                    case :mnesia.read(:redex, {db, key}, :write) do
+                    case Mnesia.read(:redex, {db, key}, :write) do
                       [{:redex, {^db, ^key}, _value, expiry}] ->
                         expiry > System.os_time(:millisecond)
 
@@ -29,9 +29,9 @@ defmodule Redex.Command.SET do
                     end
 
                   if (args.nx and not key_exists) or (args.xx and key_exists),
-                    do: :mnesia.write({:redex, {db, key}, value, args.expiry})
+                    do: Mnesia.write(:redex, {:redex, {db, key}, value, args.expiry}, :write)
                 else
-                  :mnesia.write({:redex, {db, key}, value, args.expiry})
+                  Mnesia.write(:redex, {:redex, {db, key}, value, args.expiry}, :write)
                 end
               end)
 

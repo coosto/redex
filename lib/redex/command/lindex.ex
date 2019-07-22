@@ -1,7 +1,7 @@
 defmodule Redex.Command.LINDEX do
   use Redex.Command
 
-  def exec([key, index], state = state(db: db)) do
+  def exec([key, index], state = %State{db: db}) do
     String.to_integer(index)
   rescue
     ArgumentError -> reply({:error, "ERR value is not an integer or out of range"}, state)
@@ -9,7 +9,7 @@ defmodule Redex.Command.LINDEX do
     index ->
       now = System.os_time(:millisecond)
 
-      case :mnesia.dirty_read(:redex, {db, key}) do
+      case Mnesia.dirty_read(:redex, {db, key}) do
         [{:redex, {^db, ^key}, list, expiry}] when expiry > now and is_list(list) ->
           Enum.at(list, index)
 

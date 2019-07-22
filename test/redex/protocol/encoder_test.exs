@@ -1,19 +1,43 @@
 defmodule Redex.Protocol.EncoderTest do
-  use ExUnit.Case
+  use ExUnit.Case, async: true
+  use ExUnitProperties
 
   import Redex.Protocol.Encoder
 
-  test "encode" do
-    assert "+OK\r\n" == encode(:ok)
-    assert "$3\r\nGET\r\n" == encode("GET")
-    assert "$3\r\nGET\r\n" == encode("GET")
-    assert ":123\r\n" == encode(123)
-    assert "$-1\r\n" == encode(nil)
-    assert "+PONG\r\n" == encode(:pong)
-    assert "-ERR message\r\n" == encode({:error, "ERR message"})
-    assert "*0\r\n" == encode([])
-    assert "*2\r\n$1\r\nA\r\n$1\r\nB\r\n" == encode(["A", "B"])
-    assert "*2\r\n$1\r\nA\r\n:1\r\n" == encode(["A", 1])
-    assert "*2\r\n:1\r\n*1\r\n$1\r\nA\r\n" == encode([1, ["A"]])
+  test "encode :ok" do
+    assert encode(:ok) == "+OK\r\n"
+  end
+
+  test "encode nil" do
+    assert encode(nil) == "$-1\r\n"
+  end
+
+  test "encode :pong" do
+    assert encode(:pong) == "+PONG\r\n"
+  end
+
+  property "encode integer" do
+    check all value <- integer() do
+      assert encode(value) == ":#{value}\r\n"
+    end
+  end
+
+  property "encode string" do
+    check all string <- binary() do
+      assert encode(string) == "$#{byte_size(string)}\r\n#{string}\r\n"
+    end
+  end
+
+  property "encode error" do
+    check all error <- binary() do
+      assert encode({:error, error}) == "-#{error}\r\n"
+    end
+  end
+
+  property "encode array" do
+    check all array <- list_of(one_of([binary(), integer(), list_of(binary())])),
+              len = length(array) do
+      assert encode(array) == "*#{len}\r\n" <> Enum.map_join(array, &encode/1)
+    end
   end
 end

@@ -15,3 +15,5 @@ config :libcluster, :topologies,
       secret: "REDEX"
     ]
   ]
+
+if Mix.env() == :test, do: import_config("test.exs")

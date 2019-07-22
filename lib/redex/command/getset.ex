@@ -1,15 +1,15 @@
 defmodule Redex.Command.GETSET do
   use Redex.Command
 
-  def exec([key, value], state = state(quorum: quorum, db: db)) do
+  def exec([key, value], state = %State{quorum: quorum, db: db}) do
     if readonly?(quorum) do
       {:error, "READONLY You can't write against a read only replica."}
     else
       now = System.os_time(:millisecond)
 
       {:atomic, result} =
-        :mnesia.sync_transaction(fn ->
-          case :mnesia.read(:redex, {db, key}, :write) do
+        Mnesia.sync_transaction(fn ->
+          case Mnesia.read(:redex, {db, key}, :write) do
             [{:redex, {^db, ^key}, value, expiry}] when expiry > now and is_binary(value) ->
               value
 
@@ -24,7 +24,7 @@ defmodule Redex.Command.GETSET do
               {:error, error}
 
             old_value ->
-              :mnesia.write({:redex, {db, key}, value, nil})
+              Mnesia.write(:redex, {:redex, {db, key}, value, nil}, :write)
               old_value
           end
         end)

@@ -1,10 +1,10 @@
 defmodule Redex.Command.GET do
   use Redex.Command
 
-  def exec([key], state = state(db: db)) do
+  def exec([key], state = %State{db: db}) do
     now = System.os_time(:millisecond)
 
-    case :mnesia.dirty_read(:redex, {db, key}) do
+    case Mnesia.dirty_read(:redex, {db, key}) do
       [{:redex, {^db, ^key}, value, expiry}] when expiry > now and is_binary(value) ->
         value
 

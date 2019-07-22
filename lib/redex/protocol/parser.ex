@@ -1,6 +1,10 @@
 defmodule Redex.Protocol.Parser do
   import NimbleParsec
-  import Redex.Protocol.State
+  import Injector
+
+  inject Redex.Protocol
+
+  alias Redex.Protocol.State
 
   crlf = string("\r\n")
   empty_bulk_string = string("$0\r\n\r\n") |> replace("")
@@ -33,16 +37,15 @@ defmodule Redex.Protocol.Parser do
              choice([large_bulk_string, times(bulk_string, min: 1)])
              |> label("a RESP array of bulk strings")
 
-  def parse(state = state(buffer: buffer)) do
+  def parse(state = %State{buffer: buffer}) do
     case parse_array(buffer) do
       {:ok, acc, buffer, _, _, _} ->
-        state
-        |> state(acc: acc, buffer: buffer)
+        %{state | acc: acc, buffer: buffer}
         |> parse_cont(length(acc) - 1)
 
       {:error, _, buffer, _, _, _} when buffer in ["", "\r"] ->
         state
-        |> recv(0)
+        |> Protocol.recv(0)
         |> parse()
 
       {:error, error, _, _, _, _} ->
@@ -55,38 +58,37 @@ defmodule Redex.Protocol.Parser do
 
   def parse(error = {:error, _}), do: error
 
-  defp parse_inline(state = state(buffer: buffer)) do
+  defp parse_inline(state = %State{buffer: buffer}) do
     buffer
     |> String.replace("\r\n", "\n", global: false)
     |> String.split("\n", parts: 2, trim: false)
     |> case do
       [_buffer] ->
         state
-        |> recv(0)
+        |> Protocol.recv(0)
         |> parse()
 
       [line, buffer] ->
-        {:ok, String.split(line), state(state, buffer: buffer)}
+        {:ok, String.split(line), %{state | buffer: buffer}}
     end
   end
 
-  defp parse_cont(state = state(acc: [len | cmd]), len) do
-    {:ok, cmd, state(state, acc: [])}
+  defp parse_cont(state = %State{acc: [len | cmd]}, len) do
+    {:ok, cmd, %{state | acc: []}}
   end
 
-  defp parse_cont(state = state(acc: acc, buffer: ""), len) when len < hd(acc) do
+  defp parse_cont(state = %State{acc: acc, buffer: ""}, len) when len < hd(acc) do
     state
-    |> recv(0)
+    |> Protocol.recv(0)
     |> parse_cont(len)
   end
 
-  defp parse_cont(state = state(acc: acc, buffer: buffer), len) when len < hd(acc) do
+  defp parse_cont(state = %State{acc: acc, buffer: buffer}, len) when len < hd(acc) do
     case parse_string(buffer) do
       {:ok, [size], buffer, _, _, _} when is_integer(size) and byte_size(buffer) >= size + 2 ->
         case buffer do
           <<string::bytes-size(size), "\r\n", rest::bytes>> ->
-            state
-            |> state(acc: acc ++ [string], buffer: rest)
+            %{state | acc: acc ++ [string], buffer: rest}
             |> parse_cont(len + 1)
 
           _ ->
@@ -94,16 +96,14 @@ defmodule Redex.Protocol.Parser do
         end
 
       {:ok, [size], buffer, _, _, _} when is_integer(size) ->
-        state
-        |> state(buffer: buffer)
-        |> recv(size + 2 - byte_size(buffer))
+        %{state | buffer: buffer}
+        |> Protocol.recv(size + 2 - byte_size(buffer))
         |> case do
-          state(buffer: <<string::bytes-size(size), "\r\n">>) ->
-            state
-            |> state(acc: acc ++ [string], buffer: "")
+          %State{buffer: <<string::bytes-size(size), "\r\n">>} ->
+            %{state | acc: acc ++ [string], buffer: ""}
             |> parse_cont(len + 1)
 
-          state() ->
+          %State{} ->
             {:error, "ERR Protocol error: expected bulk string terminated with a CRLF"}
 
           error = {:error, _} ->
@@ -111,13 +111,12 @@ defmodule Redex.Protocol.Parser do
         end
 
       {:ok, strings, buffer, _, _, _} ->
-        state
-        |> state(acc: acc ++ strings, buffer: buffer)
+        %{state | acc: acc ++ strings, buffer: buffer}
         |> parse_cont(len + length(strings))
 
       {:error, _, _, _, _, _} when byte_size(buffer) < 17 ->
         state
-        |> recv(0)
+        |> Protocol.recv(0)
         |> parse_cont(len)
 
       {:error, error, _, _, _, _} ->
@@ -125,7 +124,7 @@ defmodule Redex.Protocol.Parser do
     end
   end
 
-  defp parse_cont(state(acc: acc), _) do
+  defp parse_cont(%State{acc: acc}, _) do
     {:error, "ERR Protocol error: expected a RESP array of length #{hd(acc)}"}
   end
 

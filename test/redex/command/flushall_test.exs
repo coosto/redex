@@ -1,37 +1,51 @@
 defmodule Redex.Command.FlushallTest do
-  use ExUnit.Case
+  use ExUnit.Case, async: true
+  use ExUnitProperties
 
-  import Redex.Protocol.State
-  import Redex.Mock.State
+  import Mox
+  import Redex.DataGenerators
   import Redex.Command.FLUSHALL
 
-  setup_all do
-    [state: mock_state()]
+  setup :verify_on_exit!
+
+  property "FLUSHALL" do
+    check all state <- state(),
+              nodes <- nodes(state) do
+      MnesiaMock
+      |> expect(:system_info, fn :running_db_nodes -> nodes end)
+      |> expect(:clear_table, fn :redex -> {:atomic, :ok} end)
+
+      ProtocolMock
+      |> expect(:reply, fn :ok, ^state -> state end)
+
+      assert state == exec([], state)
+    end
   end
 
-  setup %{state: state} do
-    {:atomic, :ok} = :mnesia.clear_table(:redex)
-    reset_state(state)
-    :ok
+  property "FLUSHALL in readonly mode" do
+    error = {:error, "READONLY You can't write against a read only replica."}
+
+    check all state <- state(),
+              nodes <- nodes(state, readonly: true) do
+      MnesiaMock
+      |> expect(:system_info, fn :running_db_nodes -> nodes end)
+
+      ProtocolMock
+      |> expect(:reply, fn ^error, ^state -> state end)
+
+      assert state == exec([], state)
+    end
   end
 
-  test "FLUSHALL", %{state: state} do
-    :ok = :mnesia.dirty_write({:redex, {0, "a"}, "123", nil})
-    :ok = :mnesia.dirty_write({:redex, {1, "a"}, "123", nil})
-    result = exec([], state) |> get_output()
-    assert result == "+OK\r\n"
-    assert [] == :mnesia.dirty_all_keys(:redex)
-  end
+  property "FLUSHALL with wrong number of arguments" do
+    error = {:error, "ERR syntax error"}
 
-  test "FLUSHALL in readonly mode", %{state: state} do
-    :ok = :mnesia.dirty_write({:redex, {0, "a"}, "123", nil})
-    result = exec([], state(state, quorum: 2)) |> get_output()
-    assert result == "-READONLY You can't write against a read only replica.\r\n"
-    assert [{0, "a"}] == :mnesia.dirty_all_keys(:redex)
-  end
+    check all args <- list_of(binary(), min_length: 1),
+              state <- state() do
+      ProtocolMock
+      |> expect(:reply, fn ^error, ^state -> state end)
 
-  test "FLUSHALL with wrong number of arguments", %{state: state} do
-    result = exec(["a"], state) |> get_output()
-    assert result == "-ERR wrong number of arguments for 'FLUSHALL' command\r\n"
+      assert state == exec(args, state)
+    end
   end
 end

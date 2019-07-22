@@ -9,7 +9,7 @@ defmodule Redex.Command.SUBSCRIBE do
 
   defp subscribe([], state), do: state
 
-  defp subscribe([ch | channels], state = state(channels: subscribed)) do
+  defp subscribe([ch | channels], state = %State{channels: subscribed}) do
     subscribed =
       if ch in subscribed do
         subscribed

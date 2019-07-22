@@ -11,15 +11,15 @@ defmodule Redex.Command.INCRBY do
 
   def exec(_, state), do: wrong_arg_error("INCRBY") |> reply(state)
 
-  def inc(key, inc, state = state(quorum: quorum, db: db)) do
+  def inc(key, inc, state = %State{quorum: quorum, db: db}) do
     if readonly?(quorum) do
       {:error, "READONLY You can't write against a read only replica."}
     else
       now = System.os_time(:millisecond)
 
       {:atomic, result} =
-        :mnesia.sync_transaction(fn ->
-          case :mnesia.read(:redex, {db, key}, :write) do
+        Mnesia.sync_transaction(fn ->
+          case Mnesia.read(:redex, {db, key}, :write) do
             [{:redex, {^db, ^key}, value, expiry}] when expiry > now and is_binary(value) ->
               try do
                 {String.to_integer(value) + inc, expiry}
@@ -38,7 +38,7 @@ defmodule Redex.Command.INCRBY do
               {:error, error}
 
             {value, expiry} ->
-              :mnesia.write({:redex, {db, key}, Integer.to_string(value), expiry})
+              Mnesia.write(:redex, {:redex, {db, key}, Integer.to_string(value), expiry}, :write)
               value
           end
         end)

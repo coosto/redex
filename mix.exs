@@ -6,7 +6,7 @@ defmodule Redex.MixProject do
       app: :redex,
       version: "0.4.0",
       elixir: "~> 1.9",
-      elixirc_paths: if(Mix.env() == :test, do: ["lib", "test/mock"], else: ["lib"]),
+      elixirc_paths: if(Mix.env() == :test, do: ["lib", "test/support"], else: ["lib"]),
       start_permanent: Mix.env() == :prod,
       deps: deps()
     ]
@@ -21,12 +21,14 @@ defmodule Redex.MixProject do
 
   defp deps do
     [
+      {:injector, "~> 0.2"},
+      {:mox, "~> 0.5"},
       {:manifold, "~> 1.2"},
       {:ranch, "~> 1.7"},
       {:libcluster, "~> 3.1"},
       {:nimble_parsec, "~> 0.5.0"},
       {:dialyxir, "~> 1.0.0-rc.6", only: [:dev], runtime: false},
-      {:stream_data, "~> 0.4", only: [:test]}
+      {:stream_data, "~> 0.4", only: [:dev, :test]}
     ]
   end
 end

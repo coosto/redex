@@ -11,17 +11,17 @@ defmodule Redex.Command.PEXPIRE do
 
   def exec(_, state), do: wrong_arg_error("PEXPIRE") |> reply(state)
 
-  def expire(key, timeout, state = state(quorum: quorum, db: db)) do
+  def expire(key, timeout, state = %State{quorum: quorum, db: db}) do
     if readonly?(quorum) do
       {:error, "READONLY You can't write against a read only replica."}
     else
       now = System.os_time(:millisecond)
 
       {:atomic, result} =
-        :mnesia.sync_transaction(fn ->
-          case :mnesia.read(:redex, {db, key}, :write) do
+        Mnesia.sync_transaction(fn ->
+          case Mnesia.read(:redex, {db, key}, :write) do
             [{:redex, {^db, ^key}, value, expiry}] when expiry > now ->
-              :mnesia.write({:redex, {db, key}, value, now + timeout})
+              Mnesia.write(:redex, {:redex, {db, key}, value, now + timeout}, :write)
               1
 
             _ ->

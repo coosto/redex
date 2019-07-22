@@ -9,10 +9,10 @@ defmodule Redex.Command.PTTL do
 
   def exec(_, state), do: wrong_arg_error("PTTL") |> reply(state)
 
-  def pttl(key, state(db: db)) do
+  def pttl(key, %State{db: db}) do
     now = System.os_time(:millisecond)
 
-    case :mnesia.dirty_read(:redex, {db, key}) do
+    case Mnesia.dirty_read(:redex, {db, key}) do
       [{:redex, {^db, ^key}, _value, nil}] ->
         -1
 

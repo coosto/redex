@@ -1,5 +1,10 @@
 defmodule Redex.Command do
-  import Redex.Protocol.State
+  import Injector
+
+  inject :mnesia, as: Mnesia
+  inject Redex.Protocol
+
+  import Protocol, only: [reply: 2]
 
   @commands Path.wildcard("#{__DIR__}/command/*.ex")
             |> Enum.map(&Path.basename(&1, ".ex"))
@@ -7,8 +12,12 @@ defmodule Redex.Command do
 
   defmacro __using__(_opts) do
     quote do
-      import Redex.Protocol.State
+      inject :mnesia, as: Mnesia
+
+      import Protocol, only: [reply: 2]
       import Redex.Command, only: [wrong_arg_error: 1, readonly?: 1]
+
+      alias Redex.Protocol.State
 
       unquote do
         for cmd <- @commands do
@@ -50,7 +59,7 @@ defmodule Redex.Command do
   def wrong_arg_error(cmd), do: {:error, "ERR wrong number of arguments for '#{cmd}' command"}
 
   def readonly?(quorum) do
-    nodes = :mnesia.system_info(:running_db_nodes)
+    nodes = Mnesia.system_info(:running_db_nodes)
     length(nodes) < quorum
   end
 end

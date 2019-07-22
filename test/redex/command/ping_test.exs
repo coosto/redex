@@ -1,30 +1,41 @@
 defmodule Redex.Command.PingTest do
-  use ExUnit.Case
+  use ExUnit.Case, async: true
+  use ExUnitProperties
 
-  import Redex.Mock.State
+  import Mox
+  import Redex.DataGenerators
   import Redex.Command.PING
 
-  setup_all do
-    [state: mock_state()]
+  setup :verify_on_exit!
+
+  property "PING without message" do
+    check all state <- state() do
+      ProtocolMock
+      |> expect(:reply, fn :pong, ^state -> state end)
+
+      assert state == exec([], state)
+    end
   end
 
-  setup %{state: state} do
-    reset_state(state)
-    :ok
+  property "PING with message" do
+    check all state <- state(),
+              message <- binary() do
+      ProtocolMock
+      |> expect(:reply, fn ^message, ^state -> state end)
+
+      assert state == exec([message], state)
+    end
   end
 
-  test "PING without message", %{state: state} do
-    result = exec([], state) |> get_output()
-    assert result == "+PONG\r\n"
-  end
+  property "PING with wrong number of arguments" do
+    error = {:error, "ERR wrong number of arguments for 'PING' command"}
 
-  test "PING with message", %{state: state} do
-    result = exec(["hello"], state) |> get_output()
-    assert result == "$5\r\nhello\r\n"
-  end
+    check all state <- state(),
+              args <- list_of(binary(), min_length: 2) do
+      ProtocolMock
+      |> expect(:reply, fn ^error, ^state -> state end)
 
-  test "PING with wrong number of arguments", %{state: state} do
-    result = exec(["hello", "world"], state) |> get_output()
-    assert result == "-ERR wrong number of arguments for 'PING' command\r\n"
+      assert state == exec(args, state)
+    end
   end
 end

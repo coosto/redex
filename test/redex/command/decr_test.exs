@@ -1,57 +1,111 @@
 defmodule Redex.Command.DecrTest do
-  use ExUnit.Case
+  use ExUnit.Case, async: true
+  use ExUnitProperties
 
-  import Redex.Protocol.State
-  import Redex.Mock.State
+  import Mox
+  import Redex.DataGenerators
   import Redex.Command.DECR
 
-  setup_all do
-    [state: mock_state()]
+  setup :verify_on_exit!
+
+  property "DECR a non existing or expired key" do
+    check all state = %{db: db} <- state(),
+              key <- binary(),
+              nodes <- nodes(state),
+              no_record <- no_or_expired_record(state, key: key) do
+      MnesiaMock
+      |> expect(:system_info, fn :running_db_nodes -> nodes end)
+      |> expect(:sync_transaction, fn f -> {:atomic, f.()} end)
+      |> expect(:read, fn :redex, {^db, ^key}, :write -> no_record end)
+      |> expect(:write, fn :redex, {:redex, {^db, ^key}, "-1", nil}, :write -> :ok end)
+
+      ProtocolMock
+      |> expect(:reply, fn -1, ^state -> state end)
+
+      assert state == exec([key], state)
+    end
   end
 
-  setup %{state: state} do
-    {:atomic, :ok} = :mnesia.clear_table(:redex)
-    reset_state(state)
-    :ok
+  property "DECR an existing key" do
+    check all state <- state(),
+              nodes <- nodes(state),
+              record = {:redex, {db, key}, old_value, expiry} <- record(state, type: :int),
+              new_value = String.to_integer(old_value) - 1,
+              str_value = to_string(new_value) do
+      MnesiaMock
+      |> expect(:system_info, fn :running_db_nodes -> nodes end)
+      |> expect(:sync_transaction, fn f -> {:atomic, f.()} end)
+      |> expect(:read, fn :redex, {^db, ^key}, :write -> [record] end)
+      |> expect(:write, fn :redex, {:redex, {^db, ^key}, ^str_value, ^expiry}, :write -> :ok end)
+
+      ProtocolMock
+      |> expect(:reply, fn ^new_value, ^state -> state end)
+
+      assert state == exec([key], state)
+    end
   end
 
-  test "DECR non existing key", %{state: state} do
-    result = exec(["a"], state) |> get_output()
-    assert result == ":-1\r\n"
+  property "DECR in readonly mode" do
+    error = {:error, "READONLY You can't write against a read only replica."}
+
+    check all state <- state(),
+              nodes <- nodes(state, readonly: true),
+              key <- binary() do
+      MnesiaMock
+      |> expect(:system_info, fn :running_db_nodes -> nodes end)
+
+      ProtocolMock
+      |> expect(:reply, fn ^error, ^state -> state end)
+
+      assert state == exec([key], state)
+    end
   end
 
-  test "DECR existing key", %{state: state} do
-    :ok = :mnesia.dirty_write({:redex, {0, "a"}, "2", nil})
-    result = exec(["a"], state) |> get_output()
-    assert result == ":1\r\n"
+  property "DECR a key with a wrong kind of value" do
+    error = {:error, "WRONGTYPE Operation against a key holding the wrong kind of value"}
+
+    check all state <- state(),
+              nodes <- nodes(state),
+              record = {:redex, {db, key}, _, _} <- record(state, type: :list) do
+      MnesiaMock
+      |> expect(:system_info, fn :running_db_nodes -> nodes end)
+      |> expect(:sync_transaction, fn f -> {:atomic, f.()} end)
+      |> expect(:read, fn :redex, {^db, ^key}, :write -> [record] end)
+
+      ProtocolMock
+      |> expect(:reply, fn ^error, ^state -> state end)
+
+      assert state == exec([key], state)
+    end
   end
 
-  test "DECR in readonly mode", %{state: state} do
-    result = exec(["a"], state(state, quorum: 2)) |> get_output()
-    assert result == "-READONLY You can't write against a read only replica.\r\n"
+  property "DECR a key with a non integer value" do
+    error = {:error, "ERR value is not an integer or out of range"}
+
+    check all state <- state(),
+              nodes <- nodes(state),
+              record = {:redex, {db, key}, _, _} <- record(state, type: binary(min_length: 3)) do
+      MnesiaMock
+      |> expect(:system_info, fn :running_db_nodes -> nodes end)
+      |> expect(:sync_transaction, fn f -> {:atomic, f.()} end)
+      |> expect(:read, fn :redex, {^db, ^key}, :write -> [record] end)
+
+      ProtocolMock
+      |> expect(:reply, fn ^error, ^state -> state end)
+
+      assert state == exec([key], state)
+    end
   end
 
-  test "DECR a key in db 1", %{state: state} do
-    :ok = :mnesia.dirty_write({:redex, {1, "a"}, "5", nil})
-    result = exec(["a"], state(state, db: 1)) |> get_output()
-    assert result == ":4\r\n"
-  end
+  property "DECR with wrong number of arguments" do
+    error = {:error, "ERR wrong number of arguments for 'DECR' command"}
 
-  test "DECR an expired key", %{state: state} do
-    expiry = System.os_time(:millisecond) - 1
-    :ok = :mnesia.dirty_write({:redex, {0, "a"}, "123", expiry})
-    result = exec(["a"], state) |> get_output()
-    assert result == ":-1\r\n"
-  end
+    check all args <- filter(list_of(binary()), &(length(&1) != 1)),
+              state <- state() do
+      ProtocolMock
+      |> expect(:reply, fn ^error, ^state -> state end)
 
-  test "DECR a key with a wrong kind of value", %{state: state} do
-    :ok = :mnesia.dirty_write({:redex, {0, "a"}, ["123"], nil})
-    result = exec(["a"], state) |> get_output()
-    assert result == "-WRONGTYPE Operation against a key holding the wrong kind of value\r\n"
-  end
-
-  test "DECR with wrong number of arguments", %{state: state} do
-    result = exec(["a", "b"], state) |> get_output()
-    assert result == "-ERR wrong number of arguments for 'DECR' command\r\n"
+      assert state == exec(args, state)
+    end
   end
 end

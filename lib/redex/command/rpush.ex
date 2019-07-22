@@ -1,15 +1,15 @@
 defmodule Redex.Command.RPUSH do
   use Redex.Command
 
-  def exec([key | values], state = state(quorum: quorum, db: db)) when values != [] do
+  def exec([key | values], state = %State{quorum: quorum, db: db}) when values != [] do
     if readonly?(quorum) do
       {:error, "READONLY You can't write against a read only replica."}
     else
       now = System.os_time(:millisecond)
 
       {:atomic, result} =
-        :mnesia.sync_transaction(fn ->
-          case :mnesia.read(:redex, {db, key}, :write) do
+        Mnesia.sync_transaction(fn ->
+          case Mnesia.read(:redex, {db, key}, :write) do
             [{:redex, {^db, ^key}, list, expiry}] when expiry > now and is_list(list) ->
               {list ++ values, expiry}
 
@@ -24,7 +24,7 @@ defmodule Redex.Command.RPUSH do
               {:error, error}
 
             {values, expiry} ->
-              :mnesia.write({:redex, {db, key}, values, expiry})
+              Mnesia.write({:redex, {db, key}, values, expiry})
               length(values)
           end
         end)

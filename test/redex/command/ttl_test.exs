@@ -1,53 +1,65 @@
 defmodule Redex.Command.TtlTest do
-  use ExUnit.Case
+  use ExUnit.Case, async: true
+  use ExUnitProperties
 
-  import Redex.Protocol.State
-  import Redex.Mock.State
+  import Mox
+  import Redex.DataGenerators
   import Redex.Command.TTL
 
-  setup_all do
-    [state: mock_state()]
+  setup :verify_on_exit!
+
+  property "TTL of a non existing or expired key" do
+    check all key <- binary(),
+              state = %{db: db} <- state(),
+              no_record = no_or_expired_record(state, key: key) do
+      MnesiaMock
+      |> expect(:dirty_read, fn :redex, {^db, ^key} -> no_record end)
+
+      ProtocolMock
+      |> expect(:reply, fn -2, ^state -> state end)
+
+      assert state == exec([key], state)
+    end
   end
 
-  setup %{state: state} do
-    {:atomic, :ok} = :mnesia.clear_table(:redex)
-    reset_state(state)
-    :ok
+  property "TTL of an existing key without expiry" do
+    check all state <- state(),
+              record = {:redex, {db, key}, _, _} <- record(state, expired: nil) do
+      MnesiaMock
+      |> expect(:dirty_read, fn :redex, {^db, ^key} -> [record] end)
+
+      ProtocolMock
+      |> expect(:reply, fn -1, ^state -> state end)
+
+      assert state == exec([key], state)
+    end
   end
 
-  test "TTL of non existing key", %{state: state} do
-    result = exec(["a"], state) |> get_output()
-    assert result == ":-2\r\n"
+  property "TTL of an existing key with expiry" do
+    check all state <- state(),
+              record = {:redex, {db, key}, _, expiry} <- record(state, expired: integer(10..1000)) do
+      MnesiaMock
+      |> expect(:dirty_read, fn :redex, {^db, ^key} -> [record] end)
+
+      ex = (expiry - System.os_time(:millisecond)) / 1000
+      ex = ex |> Float.ceil() |> trunc
+
+      ProtocolMock
+      |> expect(:reply, fn ^ex, ^state -> state end)
+
+      assert state == exec([key], state)
+    end
   end
 
-  test "TTL of existing key without expiry", %{state: state} do
-    :ok = :mnesia.dirty_write({:redex, {0, "a"}, "123", nil})
-    result = exec(["a"], state) |> get_output()
-    assert result == ":-1\r\n"
-  end
+  property "TTL with wrong number of arguments" do
+    error = {:error, "ERR wrong number of arguments for 'TTL' command"}
 
-  test "TTL of existing key with expiry", %{state: state} do
-    expiry = System.os_time(:millisecond) + 1000
-    :ok = :mnesia.dirty_write({:redex, {0, "a"}, "123", expiry})
-    result = exec(["a"], state) |> get_output()
-    assert result == ":1\r\n"
-  end
+    check all args <- filter(list_of(binary()), &(length(&1) != 1)),
+              state <- state() do
+      ProtocolMock
+      |> expect(:reply, fn ^error, ^state -> state end)
 
-  test "TTL of a key from db 1", %{state: state} do
-    :ok = :mnesia.dirty_write({:redex, {1, "a"}, "123", nil})
-    result = exec(["a"], state(state, db: 1)) |> get_output()
-    assert result == ":-1\r\n"
-  end
-
-  test "TTL of an expired key", %{state: state} do
-    expiry = System.os_time(:millisecond) - 1
-    :ok = :mnesia.dirty_write({:redex, {0, "a"}, "123", expiry})
-    result = exec(["a"], state) |> get_output()
-    assert result == ":-2\r\n"
-  end
-
-  test "TTL with wrong number of arguments", %{state: state} do
-    result = exec(["a", "b"], state) |> get_output()
-    assert result == "-ERR wrong number of arguments for 'TTL' command\r\n"
+      assert state == exec(args, state)
+    end
   end
 end

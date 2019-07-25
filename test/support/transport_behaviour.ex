@@ -1,3 +1,3 @@
-defmodule Redex.TransportBehaviour do
+defmodule TransportBehaviour do
   @callback close(any) :: :ok
 end

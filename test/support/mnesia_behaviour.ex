@@ -1,4 +1,4 @@
-defmodule Redex.MnesiaBehaviour do
+defmodule MnesiaBehaviour do
   @callback dirty_read(:redex, any) :: [tuple]
   @callback dirty_write(:redex, tuple) :: :ok
   @callback read(:redex, any, :write) :: [tuple]

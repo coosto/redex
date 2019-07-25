@@ -1,10 +1,15 @@
 defmodule Redex.Command.PUBLISH do
   use Redex.Command
 
-  def exec([ch, msg], state) do
-    :pg2.create(ch)
+  import Injector
 
-    case :pg2.get_members(ch) do
+  inject :pg2, as: Pg2
+  inject Manifold
+
+  def exec([ch, msg], state) do
+    Pg2.create(ch)
+
+    case Pg2.get_members(ch) do
       {:error, _} ->
         0
 

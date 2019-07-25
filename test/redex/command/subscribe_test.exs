@@ -14,15 +14,17 @@ defmodule Redex.Command.SubscribeTest do
       new_state =
         for ch <- channels, reduce: state do
           state = %{channels: channels} ->
-            channels = if ch in channels do
-              channels
-            else
-              Pg2Mock
-              |> expect(:create, fn ^ch -> :ok end)
-              |> expect(:join, fn ^ch, pid when pid == self() -> :ok end)
+            channels =
+              if ch in channels do
+                channels
+              else
+                Pg2Mock
+                |> expect(:create, fn ^ch -> :ok end)
+                |> expect(:join, fn ^ch, pid when pid == self() -> :ok end)
 
-              [ch | channels]
-            end
+                [ch | channels]
+              end
+
             state = %{state | channels: channels}
             subscribed = length(channels)
 

@@ -21,7 +21,8 @@ defmodule Redex.Command do
 
       unquote do
         for cmd <- @commands do
-          quote do: alias(unquote(:"Elixir.Redex.Command.#{cmd}"))
+          cmd_module = Module.concat(Redex.Command, cmd)
+          quote do: alias(unquote(cmd_module))
         end
       end
 

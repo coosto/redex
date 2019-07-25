@@ -51,7 +51,12 @@ defmodule Redex.DataGenerators do
 
     gen all db <- integer(0..100),
             quorum <- quorum do
-      %State{db: db, quorum: quorum}
+      %State{
+        transport: TransportMock,
+        socket: :socket,
+        db: db,
+        quorum: quorum
+      }
     end
   end
 end

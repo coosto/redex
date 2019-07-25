@@ -9,6 +9,13 @@ defmodule Redex.MixProject do
       elixirc_paths: if(Mix.env() == :test, do: ["lib", "test/support"], else: ["lib"]),
       start_permanent: Mix.env() == :prod,
       aliases: aliases(),
+      test_coverage: [tool: ExCoveralls],
+      preferred_cli_env: [
+        coveralls: :test,
+        "coveralls.detail": :test,
+        "coveralls.post": :test,
+        "coveralls.html": :test
+      ],
       deps: deps()
     ]
   end
@@ -34,7 +41,8 @@ defmodule Redex.MixProject do
       {:ranch, "~> 1.7"},
       {:libcluster, "~> 3.1"},
       {:nimble_parsec, "~> 0.5.0"},
-      {:dialyxir, "~> 1.0.0-rc.6", only: [:dev], runtime: false},
+      {:excoveralls, "~> 0.11.1", only: :test},
+      {:dialyxir, "~> 1.0.0-rc.6", only: :dev, runtime: false},
       {:stream_data, "~> 0.4", only: [:dev, :test]}
     ]
   end

@@ -2,7 +2,8 @@
 
 Cloud-native strong consistent masterless high available Redis implemented in Elixir.
 
-[![Build Status](https://travis-ci.org/coosto/redex.png)](https://travis-ci.org/coosto/redex)
+[![Build Status](https://travis-ci.org/coosto/redex.svg?branch=master)](https://travis-ci.org/coosto/redex)
+[![Coverage Status](https://coveralls.io/repos/github/coosto/redex/badge.svg?branch=master)](https://coveralls.io/github/coosto/redex?branch=master)
 [![License](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
 
 ## What is Redex?

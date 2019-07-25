@@ -18,7 +18,7 @@ COPY lib ./lib
 
 RUN mix release --path=/opt/release
 
-FROM alpine:latest
+FROM alpine:3.9
 
 RUN apk update && apk --no-cache --update add ncurses-libs openssl
 

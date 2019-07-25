@@ -2,6 +2,9 @@
 
 Cloud-native strong consistent masterless high available Redis implemented in Elixir.
 
+[![Build Status](https://travis-ci.org/coosto/redex.png)](https://travis-ci.org/coosto/redex)
+[![License](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
+
 ## What is Redex?
 
 Redex is an attempt to implement a Redis alternative with cloud-native apps in mind.
@@ -59,7 +62,7 @@ Redex can be configured using the following env variables:
 - REDEX_GOSSIP_SECRET
   secret to be used in gossip strategy. Defaults to "REDEX".
 - REDEX_QUORUM
-  minimum number of nodes that redex cluster has to obtain in order to become operational. Defaults to 2.
+  minimum number of nodes that redex cluster has to obtain in order to become operational. Defaults to 1.
 - REDEX_PORT
   redex port number (defaults to 6379).
 

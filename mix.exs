@@ -8,6 +8,7 @@ defmodule Redex.MixProject do
       elixir: "~> 1.9",
       elixirc_paths: if(Mix.env() == :test, do: ["lib", "test/support"], else: ["lib"]),
       start_permanent: Mix.env() == :prod,
+      aliases: aliases(),
       deps: deps()
     ]
   end
@@ -16,6 +17,12 @@ defmodule Redex.MixProject do
     [
       extra_applications: [:logger, :mnesia],
       mod: {Redex.Application, []}
+    ]
+  end
+
+  defp aliases do
+    [
+      test: "test --no-start"
     ]
   end
 

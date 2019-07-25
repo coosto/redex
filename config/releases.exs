@@ -2,7 +2,7 @@ import Config
 
 config :redex,
   port: System.get_env("REDEX_PORT", "6379") |> String.to_integer(),
-  quorum: System.get_env("REDEX_QUORUM", "2") |> String.to_integer()
+  quorum: System.get_env("REDEX_QUORUM", "1") |> String.to_integer()
 
 if System.get_env("REDEX_K8S_SELECTOR") do
   config :libcluster, :topologies,

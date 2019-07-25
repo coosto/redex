@@ -9,7 +9,7 @@ RUN mix local.rebar --force &&\
 
 # Cache dependencies
 COPY mix.exs mix.lock ./
-RUN mix deps.get
+RUN mix deps.get --only prod
 COPY config ./config
 RUN mix deps.compile
 

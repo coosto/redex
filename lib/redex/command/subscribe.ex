@@ -1,6 +1,10 @@
 defmodule Redex.Command.SUBSCRIBE do
   use Redex.Command
 
+  import Injector
+
+  inject :pg2, as: Pg2
+
   def exec(channels, state) when channels != [] do
     subscribe(channels, state)
   end
@@ -10,16 +14,16 @@ defmodule Redex.Command.SUBSCRIBE do
   defp subscribe([], state), do: state
 
   defp subscribe([ch | channels], state = %State{channels: subscribed}) do
-    subscribed =
+    state =
       if ch in subscribed do
-        subscribed
+        state
       else
-        :pg2.create(ch)
-        :pg2.join(ch, self())
-        [ch | subscribed]
+        Pg2.create(ch)
+        Pg2.join(ch, self())
+        %{state | channels: [ch | subscribed]}
       end
 
-    reply(["subscribe", ch, length(subscribed)], state)
+    reply(["subscribe", ch, length(state.channels)], state)
     subscribe(channels, state)
   end
 end

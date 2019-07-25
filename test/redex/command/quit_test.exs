@@ -17,7 +17,7 @@ defmodule Redex.Command.QuitTest do
       TransportMock
       |> expect(:close, fn :socket -> :ok end)
 
-      exec(args, state)
+      assert state == exec(args, state)
     end
   end
 end

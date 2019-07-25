@@ -48,14 +48,17 @@ defmodule Redex.DataGenerators do
 
   def state(opts \\ []) do
     quorum = if opts[:quorum], do: constant(opts[:quorum]), else: positive_integer()
+    channels = if opts[:channels], do: uniq_list_of(binary(), min_length: 1), else: constant([])
 
     gen all db <- integer(0..100),
-            quorum <- quorum do
+            quorum <- quorum,
+            channels <- channels do
       %State{
         transport: TransportMock,
         socket: :socket,
         db: db,
-        quorum: quorum
+        quorum: quorum,
+        channels: channels
       }
     end
   end

@@ -36,11 +36,11 @@ defmodule Redex.MixProject do
   defp deps do
     [
       {:injector, "~> 0.2"},
-      {:mox, "~> 0.5"},
       {:manifold, "~> 1.2"},
       {:ranch, "~> 1.7"},
       {:libcluster, "~> 3.1"},
       {:nimble_parsec, "~> 0.5.0"},
+      {:mox, "~> 0.5", only: :test},
       {:excoveralls, "~> 0.11.1", only: :test},
       {:dialyxir, "~> 1.0.0-rc.6", only: :dev, runtime: false},
       {:stream_data, "~> 0.4", only: [:dev, :test]}

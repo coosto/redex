@@ -4,7 +4,7 @@ Cloud-native strong consistent masterless high available Redis implemented in El
 
 [![Build Status](https://travis-ci.org/coosto/redex.svg?branch=master)](https://travis-ci.org/coosto/redex)
 [![Coverage Status](https://coveralls.io/repos/github/coosto/redex/badge.svg?branch=master)](https://coveralls.io/github/coosto/redex?branch=master)
-[![License](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
+[![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 
 ## What is Redex?
 

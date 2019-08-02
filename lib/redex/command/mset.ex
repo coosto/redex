@@ -22,7 +22,7 @@ defmodule Redex.Command.MSET do
   defp mset(_db, []), do: :ok
 
   defp mset(db, [key, value | rest]) do
-    Mnesia.write({:redex, {db, key}, value, nil})
+    Mnesia.write(:redex, {:redex, {db, key}, value, nil}, :write)
     mset(db, rest)
   end
 end

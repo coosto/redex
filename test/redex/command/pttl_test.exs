@@ -11,7 +11,7 @@ defmodule Redex.Command.PttlTest do
   property "PTTL of a non existing or expired key" do
     check all key <- binary(),
               state = %{db: db} <- state(),
-              no_record = no_or_expired_record(state, key: key) do
+              no_record <- no_or_expired_record(state, key: key) do
       MnesiaMock
       |> expect(:dirty_read, fn :redex, {^db, ^key} -> no_record end)
 

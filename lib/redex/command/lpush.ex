@@ -24,7 +24,7 @@ defmodule Redex.Command.LPUSH do
               {:error, error}
 
             {values, expiry} ->
-              Mnesia.write({:redex, {db, key}, values, expiry})
+              Mnesia.write(:redex, {:redex, {db, key}, values, expiry}, :write)
               length(values)
           end
         end)

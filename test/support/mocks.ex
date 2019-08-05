@@ -1,5 +1,6 @@
 Mox.defmock(TransportMock, for: TransportBehaviour)
 Mox.defmock(MnesiaMock, for: MnesiaBehaviour)
 Mox.defmock(Pg2Mock, for: Pg2Behaviour)
+Mox.defmock(SystemMock, for: SystemBehaviour)
 Mox.defmock(ManifoldMock, for: ManifoldBehaviour)
 Mox.defmock(ProtocolMock, for: Redex.Protocol)

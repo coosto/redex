@@ -1,6 +1,7 @@
 defmodule MnesiaBehaviour do
   @callback dirty_read(:redex, any) :: [tuple]
   @callback dirty_write(:redex, tuple) :: :ok
+  @callback dirty_select(:redex, [tuple]) :: [any]
   @callback read(:redex, any, :write) :: [tuple]
   @callback write(:redex, tuple, :write) :: :ok
   @callback delete(:redex, tuple, :write) :: :ok

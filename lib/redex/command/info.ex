@@ -1,11 +1,15 @@
 defmodule Redex.Command.INFO do
   use Redex.Command
 
+  import Injector
+
+  inject System
+
   @sections ["keyspace"]
 
   defp exec([]), do: section(:all)
   defp exec([section]), do: String.downcase(section) |> section()
-  defp exec(_), do: wrong_arg_error("INFO")
+  defp exec(_), do: {:error, "ERR syntax error"}
 
   defp section(:all) do
     @sections
@@ -46,7 +50,7 @@ defmodule Redex.Command.INFO do
         Map.put(acc, db, stats)
       end)
       |> Enum.map(fn {db, %{keys: keys, expires: expires, ttl: ttl}} ->
-        avg_ttl = div(ttl, expires)
+        avg_ttl = if expires > 0, do: div(ttl, expires), else: 0
         "db#{db}:keys=#{keys},expires=#{expires},avg_ttl=#{avg_ttl}\r\n"
       end)
       |> Enum.join()

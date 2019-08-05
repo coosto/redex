@@ -15,9 +15,8 @@ defmodule Redex.Command.RPOP do
               value
 
             [{:redex, {^db, ^key}, list, expiry}] when expiry > now and is_list(list) ->
-              [value | list] = Enum.reverse(list)
-              list = Enum.reverse(list)
-              Mnesia.write({:redex, {db, key}, list, expiry})
+              {value, list} = List.pop_at(list, -1)
+              Mnesia.write(:redex, {:redex, {db, key}, list, expiry}, :write)
               value
 
             [{:redex, {^db, ^key}, _value, expiry}] when expiry > now ->

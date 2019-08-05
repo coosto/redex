@@ -15,7 +15,7 @@ defmodule Redex.Command.LPOP do
               value
 
             [{:redex, {^db, ^key}, [value | list], expiry}] when expiry > now ->
-              Mnesia.write({:redex, {db, key}, list, expiry})
+              Mnesia.write(:redex, {:redex, {db, key}, list, expiry}, :write)
               value
 
             [{:redex, {^db, ^key}, _value, expiry}] when expiry > now ->

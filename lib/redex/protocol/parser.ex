@@ -99,7 +99,7 @@ defmodule Redex.Protocol.Parser do
         %{state | buffer: buffer}
         |> Protocol.recv(size + 2 - byte_size(buffer))
         |> case do
-          %State{buffer: <<string::bytes-size(size), "\r\n">>} ->
+          state = %State{buffer: <<string::bytes-size(size), "\r\n">>} ->
             %{state | acc: acc ++ [string], buffer: ""}
             |> parse_cont(len + 1)
 

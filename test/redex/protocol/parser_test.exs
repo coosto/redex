@@ -3,6 +3,7 @@ defmodule Redex.Protocol.ParserTest do
   use ExUnitProperties
 
   import Mox
+  import Redex.DataGenerators
   import Redex.Protocol.Parser
 
   alias Redex.Protocol.State
@@ -42,15 +43,49 @@ defmodule Redex.Protocol.ParserTest do
   end
 
   property "parse with randomly generated data" do
-    check all cmd <- list_of(binary()),
+    check all state <- state(),
+              cmd <- list_of(binary()),
               len = length(cmd) do
       buffer =
         cmd
         |> Enum.map(fn data -> "$#{byte_size(data)}\r\n#{data}\r\n" end)
         |> Enum.join()
 
-      state = %State{buffer: "*#{len}\r\n#{buffer}"}
+      state = %{state | buffer: "*#{len}\r\n#{buffer}"}
       assert parse(state) == {:ok, cmd, %{state | buffer: ""}}
+    end
+  end
+
+  property "parse partial data" do
+    check all state <- state(),
+              cmd <- list_of(binary()),
+              len = length(cmd) do
+      buffer =
+        cmd
+        |> Enum.map(fn data -> "$#{byte_size(data)}\r\n#{data}\r\n" end)
+        |> Enum.join()
+
+      buffer = "*#{len}\r\n#{buffer}"
+
+      recv =
+        fn state = %{transport: recv, socket: socket, buffer: buffer}, size ->
+          size = if size == 0, do: Enum.at(positive_integer(), 0), else: size
+          <<data::bytes-size(size), socket::bytes>> = socket
+
+          if socket != "" do
+            ProtocolMock
+            |> expect(:recv, recv)
+          end
+
+          %{state | socket: socket, buffer: buffer <> data}
+        end
+
+      ProtocolMock
+      |> expect(:recv, recv)
+
+      state = %{state | transport: recv, socket: buffer}
+
+      assert parse(state) == {:ok, cmd, %{state | socket: ""}}
     end
   end
 

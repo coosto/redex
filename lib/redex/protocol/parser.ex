@@ -6,6 +6,8 @@ defmodule Redex.Protocol.Parser do
 
   alias Redex.Protocol.State
 
+  @callback parse(State.t()) :: {:ok, [binary], State.t()} | {:error, any}
+
   crlf = string("\r\n")
   empty_bulk_string = string("$0\r\n\r\n") |> replace("")
 

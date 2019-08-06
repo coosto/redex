@@ -1,4 +1,6 @@
 defmodule Redex.Protocol.Encoder do
+  @callback encode(any) :: binary
+
   def encode(:ok), do: "+OK\r\n"
   def encode(value) when is_binary(value), do: "$#{byte_size(value)}\r\n#{value}\r\n"
   def encode(value) when is_integer(value), do: ":#{value}\r\n"

@@ -27,7 +27,8 @@ defmodule Redex.Command.InfoTest do
     now = System.os_time(:millisecond)
 
     check all state <- state(),
-              select_result <- list_of({integer(0..100), one_of([nil, integer(now + 1..now + 1000)])}) do
+              select_result <-
+                list_of({integer(0..100), one_of([nil, integer((now + 1)..(now + 1000))])}) do
       SystemMock
       |> expect(:os_time, fn :millisecond -> now end)
 

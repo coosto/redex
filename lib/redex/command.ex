@@ -6,6 +6,8 @@ defmodule Redex.Command do
 
   import Protocol, only: [reply: 2]
 
+  @callback exec([binary()], State.t()) :: State.t()
+
   @commands Path.wildcard("#{__DIR__}/command/*.ex")
             |> Enum.map(&Path.basename(&1, ".ex"))
             |> Enum.map(&String.upcase/1)
@@ -37,7 +39,7 @@ defmodule Redex.Command do
   end
 
   for cmd <- @commands,
-      module = :"Elixir.Redex.Command.#{cmd}",
+      module = Module.concat(Redex.Command, cmd),
       cmd <- [String.downcase(cmd), cmd] do
     def exec([unquote(cmd) | args], state) do
       unquote(module).exec(args, state)

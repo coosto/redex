@@ -88,7 +88,7 @@ defmodule Redex.Command.RpopTest do
     error = {:error, "ERR wrong number of arguments for 'RPOP' command"}
 
     check all state <- state(),
-          args <- filter(list_of(binary()), &(length(&1) != 1)) do
+              args <- filter(list_of(binary()), &(length(&1) != 1)) do
       ProtocolMock
       |> expect(:reply, fn ^error, ^state -> state end)
 

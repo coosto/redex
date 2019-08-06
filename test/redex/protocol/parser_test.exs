@@ -67,18 +67,17 @@ defmodule Redex.Protocol.ParserTest do
 
       buffer = "*#{len}\r\n#{buffer}"
 
-      recv =
-        fn state = %{transport: recv, socket: socket, buffer: buffer}, size ->
-          size = if size == 0, do: Enum.at(positive_integer(), 0), else: size
-          <<data::bytes-size(size), socket::bytes>> = socket
+      recv = fn state = %{transport: recv, socket: socket, buffer: buffer}, size ->
+        size = if size == 0, do: Enum.at(positive_integer(), 0), else: size
+        <<data::bytes-size(size), socket::bytes>> = socket
 
-          if socket != "" do
-            ProtocolMock
-            |> expect(:recv, recv)
-          end
-
-          %{state | socket: socket, buffer: buffer <> data}
+        if socket != "" do
+          ProtocolMock
+          |> expect(:recv, recv)
         end
+
+        %{state | socket: socket, buffer: buffer <> data}
+      end
 
       ProtocolMock
       |> expect(:recv, recv)

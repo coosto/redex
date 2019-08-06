@@ -1,10 +1,16 @@
 defmodule Redex.Protocol do
   @behaviour :ranch_protocol
 
-  import Redex.Protocol.Parser
-  import Redex.Protocol.Encoder
+  import Injector
 
-  alias Redex.Command
+  inject Redex.Protocol.Encoder
+  inject Redex.Protocol.Parser
+  inject Redex.Command
+  inject :ranch, as: Ranch
+
+  import Parser
+  import Encoder
+
   alias Redex.Protocol.State
 
   @callback recv(State.t(), non_neg_integer) :: State.t() | {:error, any}
@@ -15,15 +21,18 @@ defmodule Redex.Protocol do
   end
 
   def init(ref, transport, quorum) do
-    {:ok, socket} = :ranch.handshake(ref)
+    {:ok, socket} = Ranch.handshake(ref)
 
     %State{transport: transport, socket: socket, quorum: quorum}
     |> loop()
   end
 
-  def loop(state = %State{transport: transport, socket: socket, buffer: ""}) do
-    transport.setopts(socket, active: :once)
+  def loop(state = %State{transport: transport, socket: socket, buffer: "", active: false}) do
+    :ok = transport.setopts(socket, active: :once)
+    %{state | active: true} |> loop()
+  end
 
+  def loop(state = %State{socket: socket, buffer: ""}) do
     receive do
       {:push, data} ->
         data
@@ -31,7 +40,7 @@ defmodule Redex.Protocol do
         |> loop()
 
       {:tcp, ^socket, buffer} ->
-        %{state | buffer: buffer}
+        %{state | buffer: buffer, active: false}
         |> loop()
 
       error ->
@@ -47,7 +56,7 @@ defmodule Redex.Protocol do
         |> loop()
 
       error = {:error, _} ->
-        transport.send(socket, encode(error))
+        reply(error, state)
         transport.close(socket)
     end
   end

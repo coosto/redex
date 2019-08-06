@@ -5,7 +5,8 @@ defmodule Redex.Protocol.State do
             acc: [],
             quorum: 1,
             db: 0,
-            channels: []
+            channels: [],
+            active: false
 
   @type t :: %__MODULE__{
           transport: atom,
@@ -14,6 +15,7 @@ defmodule Redex.Protocol.State do
           acc: [],
           quorum: pos_integer,
           db: non_neg_integer,
-          channels: [binary]
+          channels: [binary],
+          active: boolean
         }
 end

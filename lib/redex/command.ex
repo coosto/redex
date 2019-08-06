@@ -57,7 +57,6 @@ defmodule Redex.Command do
   end
 
   def exec([], state), do: state
-  def exec(_cmd, state), do: reply({:error, "ERR invalid command"}, state)
 
   def wrong_arg_error(cmd), do: {:error, "ERR wrong number of arguments for '#{cmd}' command"}
 

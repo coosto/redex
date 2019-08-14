@@ -4,7 +4,7 @@ defmodule Redex.MixProject do
   def project do
     [
       app: :redex,
-      version: "0.4.0",
+      version: "0.4.1",
       elixir: "~> 1.9",
       elixirc_paths: if(Mix.env() == :test, do: ["lib", "test/support"], else: ["lib"]),
       start_permanent: Mix.env() == :prod,

@@ -30,7 +30,7 @@ bottleneck and a single point of failure, preventing scalability and high-availa
 
 You might also think of setting up a [Redis Cluster](https://redis.io/topics/cluster-tutorial),
 but it has its own drawbacks. It is difficult to setup, and it needs at least 3 master nodes
-to work as expected, and 3 slaves for high-availability. Furthurmore, its mainly designed for
+to work as expected, and 3 slaves for high-availability. Furthurmore, it is mainly designed for
 partitioning/sharding data sets that don't fit in a single instance or for write intensive use cases
 where a single instance can not handle all the writes, but in most cases we don't need partitioning,
 what we need is replication.
@@ -44,9 +44,9 @@ that acknowledged writes are retained during failures, since Redis uses asynchro
 Redex came out of the need for a simple Redis solution that can be used just like a single local
 Redis instance, while being able to form a replicated cluster once scaled up to multiple instances.
 You can use Redex as a sidecar container for your apps/microservices, and easily scale up/down
-your app without worrying about data being inconsistent between nodes. Redex is masterless,
+your app without worrying about data inconsistencies between nodes. Redex is masterless,
 clients don't need to know anything about cluster topology, they can interact with the local
-Redex instance just like a single Redis instance, and unlike Redis write operations are
+Redex instance just like a single Redis instance, and unlike Redis, write operations are
 strong consistent across the cluster.
 
 ## Is Redex a replacement for Redis?

@@ -1,0 +1,33 @@
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: redex
+  labels:
+    app: redex
+spec:
+  replicas: 3
+  template:
+    metadata:
+      labels:
+        app: redex
+    spec:
+      containers:
+      - name: redex
+        image: coosto/redex
+        ports:
+        - containerPort: 6379
+        readinessProbe:
+          tcpSocket:
+            port: 6379
+          initialDelaySeconds: 2
+          periodSeconds: 5
+        livenessProbe:
+          tcpSocket:
+            port: 6379
+          initialDelaySeconds: 60
+          periodSeconds: 20
+        env:
+        - name: REDEX_K8S_SELECTOR
+          value: app=redex
+        - name: REDEX_QUORUM
+          value: "2"

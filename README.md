@@ -2,6 +2,7 @@
 
 Cloud-native strong consistent masterless high available Redis implemented in Elixir.
 
+[![Docker Image](https://images.microbadger.com/badges/version/coosto/redex.svg)](https://hub.docker.com/r/coosto/redex)
 [![Build Status](https://travis-ci.org/coosto/redex.svg?branch=master)](https://travis-ci.org/coosto/redex)
 [![Coverage Status](https://coveralls.io/repos/github/coosto/redex/badge.svg?branch=master)](https://coveralls.io/github/coosto/redex?branch=master)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
@@ -9,37 +10,61 @@ Cloud-native strong consistent masterless high available Redis implemented in El
 ## What is Redex?
 
 Redex is an attempt to implement a Redis alternative with cloud-native apps in mind.
-It can be used as a sidecar container for your app, so that you can easily scale up/down
-your app and be sure that your cache storage is in sync between all replicas.
-Your app only interacts with its local sidecar cache and doesn't need to know anything
-about cluster topology.
-Redex cluster is similar to a high available Redis Sentinel setup, but unlike Redis
-which asynchounosly replicates master node to slaves, Redex is masterless
-and write operations are strong consistent across the cluster.
 
-## Why not Redis Sentinel?
+## What problem does Redex solve?
 
-Redis Sentinel is not suitable for dynamic clusters. You can not scale it up and down
-dynamically, and it needs at least 3 Sentinel instances, and in case of failure it takes
-some time to elect a new master.
-Also writes are not consistent across the cluster and replication is asynchronous.
-But Redex is masterless, strong consistent, dynamically scalable, and works
-even with one node.
+When running your applications in the cloud, you can easily scale up your app by running
+multiple instances of it. Now lets assume your application uses Redis to cache some frequently
+accessed resources or uses its pub/sub features to send events around. What happens when you
+scale up your application? If you use Redis as a sidecar container to your app, by scaling up
+your app, you will have standalone instances of Redis running, that is very difficult to manage.
+Whenever you invalidate a cache entry, you probably want to invalidate it in all instances.
+Whenever you publish an event, you most likely want that event being published in all instances.
+You might also want your writes to be immediately available in all instances. What if you use atomic
+increments/decrements? How can you perform atomic operations across the cluster?
 
-## What use cases Redex is/isn't suitable for?
+The easiest solution is to run a single instance of Redis, so that all instances of your app
+communicate with that single Redis instance, but then you will lose the fast-access and low-latency
+benefits of running Redis as a sidecar container, and also this single instance of Redis will become a
+bottleneck and a single point of failure, preventing scalability and high-availabality of your service. 
 
-Redex is well suited for read intensive use cases within a small cluster where
-strong consistency is a requirement. But strong consistency makes write operations
-gradually slower by adding nodes, hence Redex is not suitable for write intensive use cases,
-nor for clusters with a large number of nodes.
+You might also think of setting up a [Redis Cluster](https://redis.io/topics/cluster-tutorial),
+but it has its own drawbacks. It is difficult to setup, and it needs at least 3 master nodes
+to work as expected, and 3 slaves for high-availability. Furthurmore, its mainly designed for
+partitioning/sharding data sets that don't fit in a single instance or for write intensive use cases
+where a single instance can not handle all the writes, but in most cases we don't need partitioning,
+what we need is replication.
 
-Redex is only suitable for datasets that fit into ram, it does not support partitioning
-data over multiple nodes, nor persisting data to disk.
+The official solution to have a replicated cluster of Redis nodes is [Redis Sentinel](https://redis.io/topics/sentinel),
+but it also has its own problems. You need at least 3 Sentinel instances for a robust deployment,
+you need Sentinel support in your clients, you need to do lots of tweaks and scripting
+to get it to work in dynamic cluster environments like Kubernetes, and there is no guarantee
+that acknowledged writes are retained during failures, since Redis uses asynchronous replication.
+
+Redex came out of the need for a simple Redis solution that can be used just like a single local
+Redis instance, while being able to form a replicated cluster once scaled up to multiple instances.
+You can use Redex as a sidecar container for your apps/microservices, and easily scale up/down
+your app without worrying about data being inconsistent between nodes. Redex is masterless,
+clients don't need to know anything about cluster topology, they can interact with the local
+Redex instance just like a single Redis instance, and unlike Redis write operations are
+strong consistent across the cluster.
+
+## Is Redex a replacement for Redis?
+
+Of course not. Redex is a solution for use cases where you need a replicated Redis cluster in a
+dynamic cluster environment like Kubernetes, without all the hassles of official Redis solutions.
+It is well suited for read intensive use cases within a small cluster where strong consistency is
+a requirement, but strong consistency makes write operations gradually slower by adding nodes, hence
+Redex is not suitable for write intensive use cases, nor for clusters with a large number of nodes.
+
+Redex does not support all the features and commands that Redis provides, it is only suitable
+for data sets that fit into RAM, and it does not support partitioning data over multiple nodes,
+nor persisting data to disk.
 
 ## Redex key features
 
-- Uses battle-tested Mnesia in-memory database for storage
-- Extremely fast Redis protocol parser implemented with NimbleParsec
+- Uses battle-tested [Mnesia](http://erlang.org/doc/man/mnesia.html) in-memory database for storage
+- Extremely fast Redis protocol parser implemented with [NimbleParsec](https://github.com/plataformatec/nimble_parsec)
 - Writes are strong consistent across the cluster
 - Reads are local and fast, and comparable to Redis
 - Write performance is comparable to Redis in a single node setup, but gradually degrades by adding nodes

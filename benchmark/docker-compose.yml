@@ -1,0 +1,28 @@
+version: "3"
+
+services:
+  redex-benchmark:
+    image: redis
+    command: redis-benchmark -n 10000 -q -t set,get
+    network_mode: service:redex
+    depends_on:
+      - redex
+
+  redis-benchmark:
+    image: redis
+    command: redis-benchmark -n 10000 -q -t set,get
+    network_mode: service:redis
+    depends_on:
+      - redis
+  
+  redex:
+    image: coosto/redex
+    ports:
+      - 6379
+    environment:
+      - REDEX_QUORUM
+
+  redis:
+    image: redis:latest
+    ports:
+      - 6379

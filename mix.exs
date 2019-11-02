@@ -43,7 +43,8 @@ defmodule Redex.MixProject do
       {:mox, "~> 0.5", only: :test},
       {:excoveralls, "~> 0.11.1", only: :test},
       {:dialyxir, "~> 1.0.0-rc.6", only: :dev, runtime: false},
-      {:stream_data, "~> 0.4", only: [:dev, :test]}
+      {:stream_data, "~> 0.4", only: [:dev, :test]},
+      {:credo, "~> 1.1.0", only: [:dev, :test], runtime: false}
     ]
   end
 end

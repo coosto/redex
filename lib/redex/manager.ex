@@ -127,12 +127,9 @@ defmodule Redex.Manager do
           true ->
             Logger.info("sync readonly partition with active partition: #{inspect(parts)}")
 
-            if length(local_nodes) > length(remote_nodes) do
-              remote_nodes
-            else
+            (length(local_nodes) > length(remote_nodes) && remote_nodes) ||
               local_nodes
-            end
-            |> restart_nodes(state)
+              |> restart_nodes(state)
         end
       end,
       [node() | Node.list()]

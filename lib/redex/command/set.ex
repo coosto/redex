@@ -3,6 +3,7 @@ defmodule Redex.Command.SET do
 
   @default_args %{expiry: nil, nx: false, xx: false}
 
+  # credo:disable-for-next-line Credo.Check.Refactor.CyclomaticComplexity
   def exec([key, value | args], state = %State{quorum: quorum, db: db}) do
     case args(args, @default_args) do
       {:ok, args} ->

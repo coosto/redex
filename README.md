@@ -84,9 +84,8 @@ Redex can be configured using the following env variables:
   By default `hostname -i` is used to detect node's IP address.
 - REDEX_K8S_NAMESPACE and REDEX_K8S_SELECTOR
   are used to discover redex pods using k8s API to form/heal redex cluster.
-  in case these configs are not set, gossip strategy will be used to discover other nodes in the cluster.
 - REDEX_GOSSIP_SECRET
-  secret to be used in gossip strategy. Defaults to "REDEX".
+  secret to be used in gossip strategy.
 - REDEX_QUORUM
   minimum number of nodes that redex cluster has to obtain in order to become operational. Defaults to 1.
 - REDEX_PORT

@@ -6,7 +6,13 @@ defmodule Redex.Application do
   use Application
 
   def start(_type, _args) do
-    topologies = Application.fetch_env!(:libcluster, :topologies)
+    topologies =
+      Application.fetch_env!(:libcluster, :topologies)
+      |> Enum.filter(fn
+        {:k8s, config} -> config[:config][:kubernetes_selector]
+        {:gossip, config} -> config[:config][:secret]
+      end)
+
     quorum = Application.fetch_env!(:redex, :quorum)
     port = Application.fetch_env!(:redex, :port)
 

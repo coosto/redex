@@ -21,6 +21,7 @@ services:
       - 6379
     environment:
       - REDEX_QUORUM
+      - REDEX_GOSSIP_SECRET=REDEX
 
   redis:
     image: redis:latest

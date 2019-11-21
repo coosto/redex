@@ -191,6 +191,7 @@ For now only a small subset of the commands are supported:
 - PTTL
 - PING
 - SELECT
+- KEYS
 - FLUSHALL (without ASYNC argument)
 - INFO (keyspace section only)
 - QUIT

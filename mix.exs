@@ -40,6 +40,7 @@ defmodule Redex.MixProject do
       {:ranch, "~> 1.7"},
       {:libcluster, "~> 3.1"},
       {:nimble_parsec, "~> 0.5.0"},
+      {:singleton_supervisor, "~> 0.1"},
       {:mox, "~> 0.5", only: :test},
       {:excoveralls, "~> 0.11.1", only: :test},
       {:dialyxir, "~> 1.0.0-rc.6", only: :dev, runtime: false},

@@ -27,7 +27,7 @@ defmodule Redex.Application do
       {Cluster.Supervisor, [topologies, [name: Redex.ClusterSupervisor]]},
       {Redex.Manager, quorum},
       {Redex.Server, server_opts},
-      Redex.Cleaner
+      {SingletonSupervisor, strategy: :one_for_one, children: [Redex.Cleaner]}
     ]
 
     Supervisor.start_link(children, strategy: :rest_for_one, name: Redex.Supervisor)

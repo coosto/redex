@@ -2,4 +2,6 @@ language: elixir
 elixir: '1.9'
 env:
   - MIX_ENV=test
-script: mix coveralls.travis
+script:
+  - mix credo --strict
+  - mix coveralls.travis

@@ -85,6 +85,7 @@ defmodule Redex.Protocol.Parser do
     |> parse_cont(len)
   end
 
+  # credo:disable-for-next-line Credo.Check.Refactor.CyclomaticComplexity
   defp parse_cont(state = %State{acc: acc, buffer: buffer}, len) when len < hd(acc) do
     case parse_string(buffer) do
       {:ok, [size], buffer, _, _, _} when is_integer(size) and byte_size(buffer) >= size + 2 ->

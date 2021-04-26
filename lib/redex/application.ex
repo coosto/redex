@@ -11,6 +11,7 @@ defmodule Redex.Application do
       |> Enum.filter(fn
         {:k8s, config} -> config[:config][:kubernetes_selector]
         {:gossip, config} -> config[:config][:secret]
+        {:epmd, config} -> config[:config][:hosts]
       end)
 
     quorum = Application.fetch_env!(:redex, :quorum)

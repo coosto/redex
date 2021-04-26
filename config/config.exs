@@ -25,10 +25,9 @@ auth_payments_hosts = ~w(
 )a
 
 config :libcluster, :topologies,
-     config :libcluster, :topologies,
-     epmd: [
-       strategy: Cluster.Strategy.Epmd,
-       config: [hosts: "HOSTS@GO_HERE"]
-     ]
+  epmd: [
+   strategy: Cluster.Strategy.Epmd,
+   config: [hosts: "HOSTS@GO_HERE"]
+  ]
 
 if Mix.env() == :test, do: import_config("test.exs")

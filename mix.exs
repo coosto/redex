@@ -8,6 +8,7 @@ defmodule Redex.MixProject do
       elixir: "~> 1.9",
       elixirc_paths: if(Mix.env() == :test, do: ["lib", "test/support"], else: ["lib"]),
       start_permanent: Mix.env() == :prod,
+      cookie: "COOKIE_GOES_HERE",
       aliases: aliases(),
       test_coverage: [tool: ExCoveralls],
       preferred_cli_env: [

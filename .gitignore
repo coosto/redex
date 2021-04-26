@@ -22,5 +22,9 @@ erl_crash.dump
 # Ignore package tarball (built via "mix hex.build").
 redex-*.tar
 
+# JetBrains ide
+.idea
+*.iml
+
 /log/
 /.elixir_ls/
